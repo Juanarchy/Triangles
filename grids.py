@@ -1,4 +1,4 @@
-import cupy as np
+from backend import np
 
 def remove_near_duplicates_2d(array, tolerance=1e-5):
     # Sort the array lexicographically
@@ -20,7 +20,22 @@ def remove_near_duplicates_2d(array, tolerance=1e-5):
 def trunc(values, decs=0):
     return np.trunc(values*10**decs)/(10**decs)
 
+
 def rectangular_grid(xmin, xmax, ymin, ymax, dxdy=None, nxny=None):
+    """
+    Generates a rectangular grid of nodes.
+    
+    Args:
+        xmin (float): Minimum x coordinate.
+        xmax (float): Maximum x coordinate.
+        ymin (float): Minimum y coordinate.
+        ymax (float): Maximum y coordinate.
+        dxdy (tuple, optional): Tuple of (dx, dy) spacing.
+        nxny (tuple, optional): Tuple of (nx, ny) number of elements.
+        
+    Returns:
+        tuple: (x_mesh, y_mesh) arrays of node coordinates.
+    """
     # Domain
     if dxdy is not None:
         nx = int( (xmax-xmin)/dxdy[0]) + 1
@@ -41,7 +56,20 @@ def rectangular_grid(xmin, xmax, ymin, ymax, dxdy=None, nxny=None):
     return x_mesh, y_mesh
 
 def triangular_grid(xmin,xmax,ymin,ymax,dxdy=None,nxny=None):
-
+    """
+    Generates a triangular grid (equilateral-like arrangement).
+    
+    Args:
+        xmin (float): Minimum x coordinate.
+        xmax (float): Maximum x coordinate.
+        ymin (float): Minimum y coordinate.
+        ymax (float): Maximum y coordinate.
+        dxdy (tuple, optional): Tuple of (dx, dy) spacing. Note: dxdy takes precedence if both provided.
+        nxny (tuple, optional): Tuple of (nx, ny) grid dimensions.
+        
+    Returns:
+        tuple: (x_mesh, y_mesh) arrays of node coordinates.
+    """
     if dxdy is not None:
         print("Can't use dXdY option with equilateral mesh! Assuming dL=(dX+dY)/2 instead...\n")
         dL=sum(dxdy)/2
@@ -104,12 +132,19 @@ def triangular_grid(xmin,xmax,ymin,ymax,dxdy=None,nxny=None):
 
     return x_mesh,y_mesh
 
+
 def nested_grid(nodes,coords,top_indices,bottom_indices):
     """
-        nodes: 3x(#Triangles) array containing the coordinates indices for each triangle's vertices. E.g.: coords[nodes[3][0]]=[x,y] where x and y are the coordinates for triangle 3's first vertex.
-        coords: 2x(#Vertices) array containing the coordinates of the mesh's vertices
-        top_indices: list containing the indices of the top border cells.
-        bottom_indices: Analogous to the previous.
+    Generates a nested grid by refining specified elements.
+
+    Args:
+        nodes (array): 3x(#Triangles) element connectivity array.
+        coords (array): 2x(#Vertices) array of node coordinates.
+        top_indices (array): Indices of the top border cells.
+        bottom_indices (array): Indices of the bottom border cells.
+        
+    Returns:
+        array: New coordinates for the refined grid.
     """
     dy=np.abs(nodes[0][1]-nodes[1][1])
 
@@ -136,7 +171,17 @@ def nested_grid(nodes,coords,top_indices,bottom_indices):
 
     return newcoords
 
+
 def load_grid(path):
+    """
+    Loads grid coordinates (x, y) from a text file.
+    
+    Args:
+        path (str): Path to the node coordinates file.
+        
+    Returns:
+        tuple: (x_mesh, y_mesh) arrays.
+    """
 
     array=np.loadtxt(path, skiprows=1, dtype=float)
     x_mesh=array[:,0]

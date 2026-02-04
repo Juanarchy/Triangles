@@ -1,4 +1,4 @@
-import cupy as np
+from backend import np
 import grids
 import numpy as op
 import scipy as sp
@@ -242,15 +242,23 @@ def wavesplit_rec(options):
 
     return x,y,B,HUHV,W,mesh
 
+
 def maule_reconfig(options):
+    
+    base_path = options.get("data_path", ".")
+    
+    # Check if files exist
+    node_coords_file = os.path.join(base_path, "NodeCoords.txt")
+    if not os.path.exists(node_coords_file):
+         raise FileNotFoundError(f"Could not find required data file: {node_coords_file}. Please set 'data_path' in options.")
 
-    x,y=grids.load_grid("D:\\SWE Tests\\Maule2010-metrosREF\\NodeCoords.txt")
+    x,y=grids.load_grid(node_coords_file)
 
-    B=np.loadtxt("D:\\SWE Tests\\Maule2010-metrosREF\\Bathymetry.txt",dtype=float,skiprows=1)
+    B=np.loadtxt(os.path.join(base_path, "Bathymetry.txt"),dtype=float,skiprows=1)
 
-    HUHV=np.loadtxt("D:\\SWE Tests\\Maule2010-metrosREF\\Discharge.txt",dtype=float,skiprows=1)
+    HUHV=np.loadtxt(os.path.join(base_path, "Discharge.txt"),dtype=float,skiprows=1)
 
-    W=np.loadtxt("D:\\SWE Tests\\Maule2010-metrosREF\\WaterLevel.txt",dtype=float,skiprows=1)
+    W=np.loadtxt(os.path.join(base_path, "WaterLevel.txt"),dtype=float,skiprows=1)
 
     mesh=np.array([x, y]).T
 
@@ -695,20 +703,36 @@ def wellbalancedtest(options):
 
     return x,y,B,HUHV,W,mesh
 
+
 def redo_mesh(options):
 
-    x0,y0=grids.load_grid("D:\\SWE Tests\\maule_2010_fix_HySEA_FEWENO\\NodeCoordsWGhosts.txt")
+    base_path = options.get("data_path", ".")
+    
+    # Try to find files in relative path if absolute fails, or just assume relative structure
+    # For now, we will assume the user provides a 'data_path' in options if they use this test.
+    # If not provided, we can default to a 'data' folder or similar.
+    
+    node_coords_file = os.path.join(base_path, "NodeCoordsWGhosts.txt")
+    
+    if not os.path.exists(node_coords_file):
+        print(f"Warning: Data file {node_coords_file} not found. Using random/generated data or skipping.")
+        # Fallback to a simple grid if files are missing, or raise error
+        raise FileNotFoundError(f"Could not find required data file: {node_coords_file}. Please set 'data_path' in options.")
+
+    x0,y0=grids.load_grid(node_coords_file)
 
     x0=x0[0:119149]
     y0=y0[0:119149]
 
     mesh0=np.array([x0, y0]).T
+    
+    bath_file = os.path.join(base_path, "BathymetryInterp.txt")
+    disch_file = os.path.join(base_path, "DischargeInterp.txt")
+    wl_file = os.path.join(base_path, "WaterLevelInterp.txt")
 
-    B0=np.loadtxt("D:\\SWE Tests\\maule_2010_fix_HySEA_FEWENO\\BathymetryInterp.txt",dtype=float,skiprows=1)[0:119149]
-
-    HUHV0=np.loadtxt("D:\\SWE Tests\\maule_2010_fix_HySEA_FEWENO\\DischargeInterp.txt",dtype=float,skiprows=1)[0:119149,:]
-
-    W0=np.loadtxt("D:\\SWE Tests\\maule_2010_fix_HySEA_FEWENO\\WaterLevelInterp.txt",dtype=float,skiprows=1)[0:119149]
+    B0=np.loadtxt(bath_file,dtype=float,skiprows=1)[0:119149]
+    HUHV0=np.loadtxt(disch_file,dtype=float,skiprows=1)[0:119149,:]
+    W0=np.loadtxt(wl_file,dtype=float,skiprows=1)[0:119149]
 
     xmin=np.min(x0)
     xmax=np.max(x0)
@@ -729,6 +753,7 @@ def redo_mesh(options):
     HUHV=np.array([HU,HV]).T
 
     return x,y,B,HUHV,W,mesh
+
 
 def wavesplit_bump(options):
     

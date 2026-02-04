@@ -1,8 +1,32 @@
-import cupy as np
-import numpy as op
+from backend import np
+
 
 
 def bcond_develop(left_indices,right_indices,top_indices,bottom_indices,mesh,nodes,nelems,bconds,rect=True):
+    """
+    Develops boundary conditions and ghost cells for the mesh.
+
+    Args:
+        left_indices (array): Indices of elements on the left boundary.
+        right_indices (array): Indices of elements on the right boundary.
+        top_indices (array): Indices of elements on the top boundary.
+        bottom_indices (array): Indices of elements on the bottom boundary.
+        mesh (array): Array of node coordinates (N, 2).
+        nodes (array): Array of element connectivity (nelems, 3).
+        nelems (int): Number of elements in the mesh.
+        bconds (list): List of boundary condition strings [left, right, top, bottom].
+        rect (bool, optional): Flag indicating if the mesh is rectangular (True) or equilateral (False). Defaults to True.
+
+    Returns:
+        tuple: (ghosts, ghost_nodes, ghost_neighs, ghost_neighsides, left_neighs, right_neighs, top_neighs, bot_neighs, left_neighsides, right_neighsides, top_neighsides, bot_neighsides, newnodes)
+            - ghosts: Array of ghost elements.
+            - ghost_nodes: Connectivity for ghost elements.
+            - ghost_neighs: Neighbors for ghost elements.
+            - ghost_neighsides: Neighbor sides for ghost elements.
+            - left_neighs, right_neighs, top_neighs, bot_neighs: Updated boundary neighbors.
+            - left_neighsides, right_neighsides, top_neighsides, bot_neighsides: Updated boundary neighbor sides.
+            - newnodes: Coordinates of newly created ghost nodes.
+    """
     
     nleft=len(left_indices)
     nright=len(right_indices)
@@ -132,7 +156,18 @@ def bcond_develop(left_indices,right_indices,top_indices,bottom_indices,mesh,nod
     return ghosts,ghost_nodes,ghost_neighs,ghost_neighsides,left_neighs,right_neighs,top_neighs,bot_neighs,left_neighsides,right_neighsides,top_neighsides,bot_neighsides,newnodes
 
 
+
 def rectriangles(mesh,bconds):
+    """
+    Assembles a mesh using rectangular-style triangulation.
+    
+    Args:
+        mesh (array): Array of node coordinates (N, 2).
+        bconds (list): List of boundary condition strings [left, right, top, bottom].
+        
+    Returns:
+        tuple: (nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices)
+    """
 
     xmax=np.max(mesh[:,0])
     xmin=np.min(mesh[:,0])
@@ -207,8 +242,19 @@ def rectriangles(mesh,bconds):
     return nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices
 
 def eqtriangles(mesh,bconds):
+    """
+    Assembles a mesh using equilateral-style triangulation.
+    
+    Args:
+        mesh (array): Array of node coordinates (N, 2).
+        bconds (list): List of boundary condition strings [left, right, top, bottom].
+        
+    Returns:
+        tuple: (nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices)
+    """
 
     ind = np.lexsort(np.array([mesh[:,1],mesh[:,0]]))
+
     mesh=mesh[ind]
     ind = np.lexsort(np.array([mesh[:,1],mesh[:,0]]))
     mesh=mesh[ind]

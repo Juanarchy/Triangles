@@ -1,10 +1,10 @@
 import os
-import cupy as np
+from backend import np
 
 import filesave as fs
 import triangles as tri
-import rhetoric as rh
-import tests as tst
+import overlap as ov
+import cases as tst
 from grids import nested_grid
 
 #TO-DO: options->argument parser shit
@@ -19,10 +19,29 @@ options={"nxny":[1,1],
          "bconds":["wall","wall","wall","wall"], #left,right,top,bottom (west, east, north, south)
          "divisions":3,
          "triangles":"equilateral",
-         "nestings":3,
          "test":"circular_dambreak_parabolic"}
 
+
 def execute(options):
+    """
+    Executes the mesh generation process based on the provided options.
+    
+    Args:
+        options (dict): Dictionary containing simulation parameters:
+            - nxny (list, optional): [nx, ny] - Number of elements in x and y directions.
+            - dxdy (list, optional): [dx, dy] - Grid spacing in x and y directions. (Alternative to nxny).
+            - folder (str): Output folder name
+            - Tmax (float): Maximum simulation time
+            - tol_dry (float): Tolerance for dry zones
+            - g (float): Gravity acceleration
+            - manning (float): Manning's roughness coefficient
+            - CFL (float): CFL condition number
+            - dt_save (float): Time step for saving results
+            - bconds (list): Boundary conditions ["left", "right", "top", "bottom"]
+            - divisions (int): Number of successive grid refinements
+            - triangles (str): "equilateral" or "rectangular"
+            - test (str): Test case name from tests.py
+    """
     #TO-DO: tests->test selection via argument parser shit
     mybench = getattr(tst,options["test"])
 
@@ -54,9 +73,9 @@ def execute(options):
     if options["divisions"]>0:
         these_indices=np.array(range(ni))
         if options["triangles"].lower() in "rectangular":
-            ref_indices=rh.itereta(options["divisions"],options["nxny"][0],options["nxny"][1],these_indices)[-1]
+            ref_indices=ov.itereta(options["divisions"],options["nxny"][0],options["nxny"][1],these_indices)[-1]
         elif options["triangles"].lower() in "equilateral":
-            ref_indices=rh.iterdelta(options["divisions"],options["nxny"][0],options["nxny"][1],these_indices)[-1]
+            ref_indices=ov.iterdelta(options["divisions"],options["nxny"][0],options["nxny"][1],these_indices)[-1]
             delete_indices=np.hstack((top_indices,bottom_indices))
             ref_indices=np.delete(ref_indices,delete_indices,axis=0)
             these_indices=np.delete(these_indices,delete_indices,axis=0)
@@ -66,7 +85,7 @@ def execute(options):
 
     print("Finished grid with "+str(len(nodes))+" elements, and "+str(len(newmesh))+" nodes!")
 
-    if options["nestings"]>0:
+    if options["divisions"]>0:
         for i in range(1,options["divisions"]+1):
             options["divisions"]-=1
             options["forced_mesh"]=nested_grid(nodes[:ghosts[0][0]],oldmesh,top_indices,bottom_indices)

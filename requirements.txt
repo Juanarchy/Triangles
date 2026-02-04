@@ -1,0 +1,3 @@
+scipy
+numpy
+cupy; platform_system!="Windows"
