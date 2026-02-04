@@ -1,13 +1,14 @@
 # Triangles
 
-**Triangles** is a specialized mesh generation tool designed for the **SWEpy** (Shallow Water Equation Solver) ecosystem. It generates high-quality triangular and rectangular meshes with bathymetry, initial conditions, and boundary definitions.
+**Triangles** is a specialized mesh generation tool designed for the **SWEpy** (Shallow Water Equation Solver) ecosystem. It generates simple structured equilateral or rectangular triangular meshes with bathymetry, initial conditions, and boundary definitions.
 
 ## Features
 
 - **Flexible Grids**: Generates structured equilateral or rectangular triangular grids.
 - **Topography/Bathymetry**: Supports complex bathymetry generation including islands, slopes, and custom functions.
-- **Initial Conditions**: define initial water levels, discharges, and velocities.
-- **Pipeline Integration**: Automatically generates the `Config.swe` configuration file required by SWEpy.
+- **Initial Conditions**: Define initial water levels, discharges, and velocities.
+- **Custom Case Support**: Allows for user-defined tests following a straightforward template.
+- **Pipeline Integration**: Automatically generates the files required by SWEpy.
 
 ## Installation
 
@@ -96,3 +97,4 @@ python run.py --test my_custom_test --folder my_test_folder
 ## License
 
 Distributed under the GPL v3 License. See `LICENSE` for more information.
+
