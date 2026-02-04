@@ -28,8 +28,6 @@ pip install -e .
 
 ## Usage
 
-## Usage
-
 ### Command Line Interface (Recommended)
 
 After installation, use the `triangles-mesh` system-wide command:
