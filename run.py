@@ -84,7 +84,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     
     # Override defaults with CLI args
@@ -99,13 +99,7 @@ if __name__ == "__main__":
     if args.ny:
         options["nxny"][1] = args.ny
         
-    # dxdy handling (if provided, it might override nxny in grids.py logic depending on implementation)
-    # The default options doesn't have dxdy, but main.py docstring says it's an alternative.
-    # main.py passes `options` to `mybench` and `assembly`. 
-    # grids.py functions accept `dxdy`. So we should add it to options if present.
     if args.dx or args.dy:
-        # Default dx/dy if one is missing but the other is present? 
-        # Usually both are needed or assumed equal. Let's just pass what is given.
         dx = args.dx if args.dx else 1.0
         dy = args.dy if args.dy else 1.0
         options["dxdy"] = [dx, dy]
@@ -135,3 +129,6 @@ if __name__ == "__main__":
 
     print(f"Generating mesh for test case '{options['test']}' in folder '{options['folder']}'...")
     execute(options)
+
+if __name__ == "__main__":
+    main()

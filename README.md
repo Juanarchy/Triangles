@@ -15,37 +15,59 @@
 Ensure you have Python 3.8+ installed.
 
 ```bash
-pip install -r requirements.txt
+pip install .
+```
+
+Or for development (editable mode):
+
+```bash
+pip install -e .
 ```
 
 *Note: `cupy` is recommended for performance if you have an NVIDIA GPU, but the tool will fallback to `numpy` if `cupy` is not available.*
 
 ## Usage
 
-The main entry point is `run.py`.
+## Usage
 
-### Command Line Interface
+### Command Line Interface (Recommended)
 
-You can run the script with default settings or override parameters via command-line arguments:
+After installation, use the `triangles-mesh` system-wide command:
 
 ```bash
-# Run with defaults (dambreak_rose test case)
-python run.py
+# Get help
+triangles-mesh --help
 
+# Run a test case
+triangles-mesh --test dambreak_rose --folder my_output
+```
+
+### Via Python Script
+
+Alternatively, you can run the script directly from the source directory:
+
+```bash
+python run.py --test dambreak_rose --folder my_output
+```
+
+### Configuration Examples
+
+Both methods support the same configuration flags.
+
+```bash
 # Run a specific test case (from cases.py)
-python run.py --test circular_dambreak --folder my_circle_mesh
+triangles-mesh --test circular_dambreak --folder my_circle_mesh
 
 # Configure simulation parameters
-python run.py --test dambreak_rose --nx 200 --ny 20 --Tmax 300 --dt_save 5
+triangles-mesh --test dambreak_rose --nx 200 --ny 20 --Tmax 300 --dt_save 5
 
 # Override Boundary Conditions (Left, Right, Top, Bottom)
-python run.py --bconds soft soft periodic periodic
+triangles-mesh --bconds soft soft periodic periodic
 ```
 
 ### Full Options List
-Use `--help` to see all available options:
 ```bash
-python run.py --help
+triangles-mesh --help
 # Options: --nx, --ny, --dx, --dy, --divisions, --triangles, --Tmax, --tol_dry, --g, --manning, --CFL, --dt_save, --bconds
 ```
 
@@ -91,7 +113,7 @@ def my_custom_test(options):
 
 Once defined, you can run it using the CLI:
 ```bash
-python run.py --test my_custom_test --folder my_test_folder
+triangles-mesh --test my_custom_test --folder my_test_folder
 ```
 
 ## License
