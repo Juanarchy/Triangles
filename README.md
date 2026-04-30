@@ -1,6 +1,6 @@
 # Triangles
 
-**Triangles** is a specialized mesh generation tool designed for the **SWEpy** (Shallow Water Equation Solver) ecosystem. It generates simple structured equilateral or rectangular triangular meshes with bathymetry, initial conditions, and boundary definitions.
+**Triangles** is a specialized mesh generation tool designed for the **[SWEpy](https://github.com/joaquinmeza90/SWEpy/)** (Shallow Water Equations solver in PYthon) ecosystem. It generates simple structured equilateral or rectangular triangular meshes with bathymetry, initial conditions, and boundary definitions.
 
 ## Features
 
