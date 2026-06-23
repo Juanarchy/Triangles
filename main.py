@@ -53,7 +53,7 @@ def execute(options):
         from triangles import eqtriangles as assembly
 
     #get path to save files
-    folder_path = os.path.join(os.path.abspath("."), options["folder"])
+    folder_path = os.path.join(os.path.abspath(options["abspath"]), options["folder"])
 
     #get node coords, bathymetry, velocities, and water level
     x,y,B,HUHV,W,oldmesh=mybench(options)
@@ -89,7 +89,7 @@ def execute(options):
         for i in range(1,options["divisions"]+1):
             options["divisions"]-=1
             options["forced_mesh"]=nested_grid(nodes[:ghosts[0][0]],oldmesh,top_indices,bottom_indices)
-            folder_path = os.path.join(os.path.abspath("."), options["folder"]+"_sub"+str(i))
+            folder_path = os.path.join(os.path.abspath(options["abspath"]), options["folder"]+"_sub"+str(i))
 
             x,y,B,HUHV,W,oldmesh=mybench(options)
 
@@ -108,9 +108,9 @@ def execute(options):
             if options["divisions"]>0:
                 these_indices=np.array(range(ni))
                 if options["triangles"].lower() in "rectangular":
-                    ref_indices=rh.itereta(options["divisions"],options["nxny"][0]*2**i,options["nxny"][1]*2**i,these_indices)[-1]
+                    ref_indices=ov.itereta(options["divisions"],options["nxny"][0]*2**i,options["nxny"][1]*2**i,these_indices)[-1]
                 elif options["triangles"].lower() in "equilateral":
-                    ref_indices=rh.iterdelta(options["divisions"],options["nxny"][0]*2**i,options["nxny"][1]*2**i,these_indices)[-1]
+                    ref_indices=ov.iterdelta(options["divisions"],options["nxny"][0]*2**i,options["nxny"][1]*2**i,these_indices)[-1]
                     delete_indices=np.hstack((top_indices,bottom_indices))
                     ref_indices=np.delete(ref_indices,delete_indices,axis=0)
                     these_indices=np.delete(these_indices,delete_indices,axis=0)

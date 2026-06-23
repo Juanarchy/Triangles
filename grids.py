@@ -66,7 +66,6 @@ def triangular_grid(xmin,xmax,ymin,ymax,dxdy=None,nxny=None):
         ymax (float): Maximum y coordinate.
         dxdy (tuple, optional): Tuple of (dx, dy) spacing. Note: dxdy takes precedence if both provided.
         nxny (tuple, optional): Tuple of (nx, ny) grid dimensions.
-        
     Returns:
         tuple: (x_mesh, y_mesh) arrays of node coordinates.
     """

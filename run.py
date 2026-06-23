@@ -22,7 +22,10 @@ options={
     # "dxdy": [1.0, 1.0],
 
     # "folder": Name of the output directory where files will be saved
-    "folder": "test_rose",
+    "folder": "folder_name",
+
+    # "abspath": Path to the location in which directory will be created
+    "abspath": ".",
 
     # "Tmax": Maximum simulation time (in seconds)
     "Tmax": 180,
@@ -57,9 +60,11 @@ options={
 }
 
 def parse_args():
+    #General Settings
     parser = argparse.ArgumentParser(description="Triangles Mesh Generator for SWEpy")
     parser.add_argument("--test", type=str, help="Test case name (from cases.py)")
     parser.add_argument("--folder", type=str, help="Output folder name")
+    parser.add_argument("--abspath", type=str, help="Location where output folder will be created, defaults to '.'")
     
     # Grid Dimensions
     parser.add_argument("--nx", type=int, help="Number of elements in X")
@@ -92,6 +97,9 @@ def main():
         options["test"] = args.test
     if args.folder:
         options["folder"] = args.folder
+
+    if args.abspath:
+        options["abspath"] = args.abspath
     
     # Grid dimensions handling
     if args.nx:
@@ -127,7 +135,7 @@ def main():
     if args.bconds:
         options["bconds"] = args.bconds
 
-    print(f"Generating mesh for test case '{options['test']}' in folder '{options['folder']}'...")
+    print(f"Generating mesh for test case '{options['test']}' in folder '{options["abspath"]+"/"+options['folder']}'...")
     execute(options)
 
 if __name__ == "__main__":
