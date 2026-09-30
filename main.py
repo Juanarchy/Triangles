@@ -45,8 +45,6 @@ def execute(options):
     #TO-DO: tests->test selection via argument parser shit
     mybench = getattr(tst,options["test"])
 
-    print("Creating mesh for test "+options["test"]+"...")
-
     if options["triangles"].lower() in "rectangular":
         from triangles import rectriangles as assembly
     else:

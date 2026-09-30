@@ -3,6 +3,8 @@ import grids
 import numpy as op
 import scipy as sp
 
+rng = np.random.default_rng()
+
 sech = lambda x: np.divide(2.0*np.exp(-1.0*x),1.0 + np.exp(-2.0*x))
 
 def equilateral_plain_grid(options):
@@ -781,6 +783,78 @@ def wavesplit_bump(options):
     V=np.zeros_like(x)
 
     W=H*sech(gamma*(x-x0))**(2)
+
+    HU=(W-B)*U
+    HV=(W-B)*V
+
+    HUHV=np.array([HU,HV]).T
+
+    mesh=np.array([x, y]).T
+
+    return x,y,B,HUHV,W,mesh
+
+def wet_dry_showoff(options):
+
+    xmax = 100
+    xmin = -300
+    ymax = 100
+    ymin = -100
+
+    #Still water depth
+    d = 10
+
+    #Ellipse parameters
+    a = 1
+    b = 4.6
+    h = 100
+    k = 0
+    r = 100
+
+    #Flats parameters
+    h_cap = 1 #Above-water height
+    s = 1.5 #Scale between smaller (top) and bigger (foot) ellipses
+
+    #Noise half-range
+    w_hedge = 1.5     #Additive noise (Length range in meters around 0)
+    w_ledge = 1.5     
+    w_slope = 0.5
+    w_cap = 0.125
+    w_bottom = 1
+
+    #Wave parameters (eastward bore as wet/wet dambreak)
+    H = 2
+    g = options["g"]
+    x0 = -50
+
+    #Grid construction
+    nxnyu=options["nxny"]
+
+    x,y=grids.triangular_grid(xmin,xmax,ymin,ymax,nxny=nxnyu)
+
+    #Fuzzy ellipse borders
+    r_top_fuzz = r+rng.uniform(-w_hedge,w_hedge,x.size)
+    r_bottom_fuzz = s*r+rng.uniform(-w_ledge,w_ledge,x.size)
+
+    #Indices of points in different regions
+    points_in_top = a*(x-h)**2+b*(y-k)**2<=(r_top_fuzz)**2
+    points_in_slope = (a*(x-h)**2+b*(y-k)**2<=r_bottom_fuzz**2)&(a*(x-h)**2+b*(y-k)**2>=r_top_fuzz**2)
+    points_in_bottom = (a*(x-h)**2+b*(y-k)**2>r_bottom_fuzz**2)
+
+    t = (r_bottom_fuzz-np.sqrt((a*(x-h)**2+b*(y-k)**2)))/(r_bottom_fuzz-r_top_fuzz) #linear parameter ranging from 0 at bottom of foot and 1 at cap
+
+    #Fuzzy bathymetry at different regions
+    cap = np.where(points_in_top, h_cap+rng.uniform(-w_cap,w_cap,x.size), 0)
+    slope = np.where(points_in_slope,(h_cap+d)*(t)-d+(rng.uniform(-w_slope,w_slope,x.size)*(1-t*(1-w_cap/w_slope))),0)
+    bottom = np.where(points_in_bottom, -d, 0)+rng.uniform(-w_bottom,w_bottom,x.size)
+
+    #Bathymetry composition
+    B=np.zeros_like(x) + bottom + cap + slope
+
+    #Water variables composition
+    W = np.where(x<x0,H,0)
+
+    U = np.zeros_like(W)
+    V = np.zeros_like(U)
 
     HU=(W-B)*U
     HV=(W-B)*V

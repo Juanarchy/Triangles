@@ -104,6 +104,9 @@ def main():
         dy = args.dy if args.dy else 1.0
         options["dxdy"] = [dx, dy]
 
+    if (args.nx is None) or (args.ny is None) or (args.dx is None) or (args.dy is None):
+        print("[WARNING] One or more of the element size parameters wasn't specified. Using defaults for them if needed...")
+
     if args.divisions is not None:
         options["divisions"] = args.divisions
     if args.triangles:
