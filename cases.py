@@ -384,6 +384,93 @@ def dambreak(options):
 
     return x,y,B,HUHV,W,mesh
 
+def dambreak_channel2shoebox(options):
+    #WORK IN PROGRESS
+    """
+    Generates mesh of a channel which discharges into a box from the middle of the left side. ny dictates the number of vertical divisions for the channel, e.g., channel_width=4 and ny=4 means dy=1 for the whole mesh.
+
+                                                            shoebox_length
+                                                <----------------------------------->
+                                                +-----------------------------------+
+                                                |                                   | ^
+                                                |                                   | |      
+                          channel_length        |                                   | |
+                   <--------------------------->|                                   | |
+                   +----------------------------+                                   | |
+                 ^ |  ~       ~       ~       ~ {                                   | |
+                 | |      ~       ~       ~     {                                   | |
+   channel_width | |  ~     ~  W0=h  ~      ~   {               W0=0                | | shoebox_width
+                 | |    ~       ~       ~       {                                   | | 
+                 | |  ~      ~      ~      ~    {                                   | | 
+                 V |      ~     ~        ~    ~ {                                   | |
+                   +----------------------------+                                   | |
+                                                |                                   | |
+    y ^                                         |                                   | |
+      |                                         |                                   | |
+      +-->                                      |                                   | v
+          x                                     +-----------------------------------+
+    """
+
+    #Geometry parameters
+    #To enforece correct gluing of channel and shoebox, shoebox_width should be a k-multiple of channel_width such that ny*k is an integer of the same parity as ny.
+    #I.e., if the channel is Lc units wide and is segmented into ny parts vertically, the shoebox's width must be Ls = Lc+Lc*n/ny, with n even. 
+    channel_length = 5
+    channel_width = 2
+    shoebox_length = 10
+    shoebox_width = 10
+
+    #Check and correction
+    #We solve the problem "Find minimum eps>0 for which Ls+eps is a k-multiple of Lc such that ny*k is an integer of the same parity as ny".
+    #By looking at the form of Ls from last comment, we can build a strictly increasing sequence of candidate solutions eps(n)=Lc-Ls+Lc*2n/ny. 
+    #Then, solving eps(x0)==0 gives (possibly) non integer x0 such that eps(x)>0 iff x>=x0.
+    ny=options[nxny][1]
+    n0=np.ceil((shoebox_width/channel_width-1)*ny/2) #Since eps(n) is strictly increasing,  .
+    eps = (1+2*n0/ny)*channel_width-shoebox_width
+    shoebox_width+=eps
+    if eps>0:
+        print('Shoebox elongated', eps, 'units to ensure matching triangles with channel.')
+
+    #Initial conditions
+    h = 1
+
+    #Coordinate limits
+    xcmin = 0
+    xcmax = channel_length
+    ycmin = -channel_width/2.0
+    ycmax = channel_width/2.0
+
+    xc,yc = grids.triangular_grid(xcmin,xcmax,ycmin,ycmax,None,options['nxny'])
+
+    xcmax=xc.max()
+
+    xsmin = xcmax
+    xsmax = xsmin + shoebox_length
+    ysmin = -shoebox_width/2.0
+    ysmax = shoebox_width/2.0
+
+    
+
+    
+
+
+
+
+
+    x,y=grids.triangular_grid(xmin,xmax,ymin,ymax,None,nxny)
+
+    B = np.zeros_like(x)
+
+    W = np.where(x<(xmin+xmax)/2, 1,0)
+
+    HU = np.zeros_like(x)
+    HV = HU
+
+    HUHV=np.array([HU,HV]).T
+
+    mesh=np.array([x,y]).T
+
+    return x,y,B,HUHV,W,mesh
+
 def dambreak_rose(options):
     xmin=0
     xmax=4000
@@ -409,6 +496,37 @@ def dambreak_rose(options):
     HUHV=np.array([HU,HV]).T
 
     mesh=np.array([x,y]).T
+
+    return x,y,B,HUHV,W,mesh
+
+def kurganov_sine(options):
+    """
+    python run.py --test kurganov_sine --abspath "../SWEpy-tests" --folder kurganov_sine --nx 100 --ny 16 --triangles equilateral --divisions 4 --Tmax 0.5 --tol_dry 1e-6 --g 9.81 --manning 0 --CFL 0.5 --dt_save 0.5 --bconds soft soft periodic periodic
+    """
+    xmin=-1
+    xmax=11
+    ymin=-2
+    ymax=2
+
+    if "forced_mesh" not in options.keys():
+        x,y=grids.triangular_grid(xmin,xmax,ymin,ymax,None,options["nxny"])
+    else:
+        x=options["forced_mesh"][:,0]
+        y=options["forced_mesh"][:,1]
+
+    mesh=np.array([x,y]).T
+
+    B=np.zeros_like(x)
+
+    u=2*np.sin(np.pi*x/5+np.pi/4)
+    
+    W=(u+10)**2/(4*options["g"])
+
+    HV=np.zeros_like(x)
+    HU=(W-B)*u
+
+    HUHV=np.array([HU,HV]).T
+
 
     return x,y,B,HUHV,W,mesh
 
