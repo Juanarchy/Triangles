@@ -926,20 +926,52 @@ def wavesplit_bump(options):
 
 def wet_dry_showoff(options):
 
+    """
+    Builds a noisy rectangular mesh consisting of a flat bottom and a protrusion(/depression? haven't tested if works the other
+    way around) in the form of a truncated ellipsoidal cone (flat cap in the form of an ellipse and a straight slope connecting 
+    it with a bigger ellipse on the bottom). Water is 
+
+                                   xmin                   x0                             xmax
+                                     |                    |                                |
+                                     V                    V                                V
+                             ymax--->+-----------------------------------------------------+ 
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~ | 
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\ ~  ~  ~  ~  ~  ~  ~  ~ .~ -~--|     
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\  ~  ~  ~  ~  ~  ~  ~'´¨wet/dry|
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\~  B=-d  ~  ~  ~  ~/ ~ ~slope~~| 
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\  ~  ~  ~  ~  ~  ~' ~  ~ ~     | 
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\~  ~  ~  ~  ~  ~ '~  ~~   . ---| 
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\ ~  ~  ~  ~  ~  ~   ~   /´  <--+--B=h_cap
+                                     |¨¨¨¨¨ W=H ¨¨¨¨¨¨¨¨¨¨^\  ~ W=0 ~  ~  ~ |~  ~  |dry cap| 
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\~  ~  ~  ~  ~  ~| ~  ~  \      |
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\ ~  ~  ~  ~  ~  ~. ~  ~   ` ---|            
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\  ~  ~  ~  ~  ~  ~. ~  ~~      |             
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\~  ~wet~ ~  ~  ~  ~  ~  ~  ~~~~| 
+                                     |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\ ~ bottom ~  ~  ~  ~ .~  ~  ~  | 
+    y ^                              |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\  ~  ~  ~  ~  ~  ~  ~ ¨~' ~--~-| 
+      |                              |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\~  ~  ~  ~  ~  ~  ~  ~  ~  ~  ~| 
+      +-->                           |¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨^\ ~  ~  ~  ~  ~  ~  ~  ~  ~  ~  | 
+          x                  ymin--->+-----------------------------------------------------+ 
+                                     l_____________________ĵ---> subsequent bore direction                      
+                                                T
+                                     bore-producing reserve
+    """
+
+    #Bounding box limits
     xmax = 100
     xmin = -300
     ymax = 100
     ymin = -100
 
-    #Still water depth
+    #Depth of non-ellipse bottom
     d = 10
 
     #Ellipse parameters
-    a = 1
-    b = 4.6
-    h = 100
-    k = 0
-    r = 100
+    a = 1       #semi axis
+    b = 4.6     #semi axis
+    h = 100     #horizontal center
+    k = 0       #vertical center
+    r = 100     #pseudo-radius
 
     #Flats parameters
     h_cap = 1 #Above-water height
