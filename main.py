@@ -8,7 +8,7 @@ import cases as tst
 from grids import nested_grid
 
 #TO-DO: options->argument parser shit
-options={"nxny":[1,1],
+def_options={"nxny":[1,1],
          "folder":"equi_test",
          "Tmax":0.07,
          "tol_dry":0.000001,
@@ -17,7 +17,7 @@ options={"nxny":[1,1],
          "CFL":0.25,
          "dt_save":0.01,
          "bconds":["wall","wall","wall","wall"], #left,right,top,bottom (west, east, north, south)
-         "divisions":3,
+         "divisions":0,
          "triangles":"equilateral",
          "test":"circular_dambreak_parabolic"}
 
@@ -42,7 +42,13 @@ def execute(options):
             - triangles (str): "equilateral" or "rectangular"
             - test (str): Test case name from tests.py
     """
-    #TO-DO: tests->test selection via argument parser shit
+    #find required options not given and default them
+    for key in def_options.keys():
+        if key not in options.keys():
+            print("[WARNING] required option '"+key+"' not given! Using default of "+str(def_options[key])+"instead...")
+            options[key]=def_options[key]
+
+    #get case function from input
     mybench = getattr(tst,options["test"])
 
     #get path to save files
