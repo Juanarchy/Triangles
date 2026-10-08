@@ -45,16 +45,22 @@ def execute(options):
     #TO-DO: tests->test selection via argument parser shit
     mybench = getattr(tst,options["test"])
 
-    if options["triangles"].lower() in "rectangular":
-        from triangles import rectriangles as assembly
-    else:
-        from triangles import eqtriangles as assembly
-
     #get path to save files
     folder_path = os.path.join(os.path.abspath(options["abspath"]), options["folder"])
 
     #get node coords, bathymetry, velocities, and water level
     x,y,B,HUHV,W,oldmesh=mybench(options)
+
+    #Logic to choose correct assembly function
+    if options["triangles"].lower() in "rectangular":
+        from triangles import rectriangles as assembly
+    else:
+        from triangles import eqtriangles as assembly
+
+    if oldmesh is dict:
+        meshtype = assembly
+        from triangles import geo_join
+        assembly=geo_join(meshtype)
 
     nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices = assembly(oldmesh,options["bconds"])
 

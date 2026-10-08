@@ -187,3 +187,16 @@ def load_grid(path):
     y_mesh=array[:,1]
 
     return x_mesh,y_mesh
+
+def resolve_gluing(meshes,gluing):
+    """
+    Finds and returns indices of vertices (cells?) where submeshes are glued together.
+
+    input:  - meshes: list of submeshes to glue.
+            - gluing: list of 4-tuples, one for each submesh, containing the index of the neighboring submesh at that edge (left, right, top, bottom) or -1 if boundary conditions.
+
+    output: - glue_idx: list of 4-tuples, one for each submesh, containing a tuple of its vertices that are to be glued to the neighboring submesh in that direction (left, right, top, bottom) or -1 if boundary conditions.
+    """
+
+    
+    return glue_idx

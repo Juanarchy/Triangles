@@ -423,12 +423,12 @@ def dambreak_channel2shoebox(options):
     #We solve the problem "Find minimum eps>0 for which Ls+eps is a k-multiple of Lc such that ny*k is an integer of the same parity as ny".
     #By looking at the form of Ls from last comment, we can build a strictly increasing sequence of candidate solutions eps(n)=Lc-Ls+Lc*2n/ny. 
     #Then, solving eps(x0)==0 gives (possibly) non integer x0 such that eps(x)>0 iff x>=x0.
-    ny=options[nxny][1]
+    ny=options['nxny'][1]
     n0=np.ceil((shoebox_width/channel_width-1)*ny/2) #Since eps(n) is strictly increasing,  .
     eps = (1+2*n0/ny)*channel_width-shoebox_width
     shoebox_width+=eps
     if eps>0:
-        print('Shoebox elongated', eps, 'units to ensure matching triangles with channel.')
+        print('Shoebox elongated ', eps, ' units to ensure matching triangles with channel.')
 
     #Initial conditions
     h = 1
@@ -441,6 +441,8 @@ def dambreak_channel2shoebox(options):
 
     xc,yc = grids.triangular_grid(xcmin,xcmax,ycmin,ycmax,None,options['nxny'])
 
+    meshc = np.array([xc,yc]).T
+
     xcmax=xc.max()
 
     xsmin = xcmax
@@ -448,26 +450,37 @@ def dambreak_channel2shoebox(options):
     ysmin = -shoebox_width/2.0
     ysmax = shoebox_width/2.0
 
-    
+    nys = shoebox_width/(channel_width/ny)
 
-    
+    xs,ys=grids.triangular_grid(xsmin,xsmax,ysmin,ysmax,None,[10,nys])
 
+    meshs = np.array([xs,ys]).T
 
+    glue_idxc = np.where(meshc[:,0]==xcmax)
+    glue_idxs = np.where((meshs[:,0]==xcmax)&(meshs[:,1]>=ycmin)&(meshs[:,1]<=ycmax))
 
+    if len(glue_idxc)!=len(glue_idxs):
+        print("[ERROR] Gluing indices don't match!")
 
+    mesh = np.zeros((len(xc)+len(xs)-len(glue_idxc),2))
 
-    x,y=grids.triangular_grid(xmin,xmax,ymin,ymax,None,nxny)
+    candidate = np.vstack((meshc[0:-len(glue_idxc)],meshs))
+
+    meshg = candidate
+
+    x = meshg[:,0]
+    y = meshg[:,1]
 
     B = np.zeros_like(x)
 
-    W = np.where(x<(xmin+xmax)/2, 1,0)
+    W = np.where(x<(xcmin+xcmax)/2, h,0)
 
     HU = np.zeros_like(x)
     HV = HU
 
     HUHV=np.array([HU,HV]).T
 
-    mesh=np.array([x,y]).T
+    mesh = {"global_mesh":meshg,"submeshes":(meshc,meshs),"glue_idx":((-1,(glue_idxc),-1,-1),((glue_idxs),-1,-1,-1)),"gluing":((-1,1,-1,-1),(0,-1,-1,-1))}
 
     return x,y,B,HUHV,W,mesh
 

@@ -371,3 +371,41 @@ def eqtriangles(mesh,bconds):
     newmesh=np.vstack((mesh,newnodes))
 
     return nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices
+
+def geo_join(meshtype):
+
+    def assembly(oldmesh,bconds):
+        meshes=[]
+        for submesh in oldmesh["submeshes"]:
+             meshes.append(meshtype(submesh,bconds))
+
+        meshn=-1
+        for mesh in meshes:
+            meshn+=1
+            for s in (0,1,2,3):
+                neigh = oldmesh["gluing"][meshn][s]
+                if neigh != -1:
+                    #For each involved mesh:
+                        #Find cells that should be glued:
+                            #For each pair of gluing vertices:
+                                #Find cell in edge that matches them
+                                #Add to list
+                        #Remove ghost cells where gluing
+                        #Shift remainder ghost cells backwards (everywhere applicable)
+                        #Remove ghost vertices
+                        #Shift remainder ghost vertices backwards
+                    #Stack neighboring mesh to global mesh:
+                        #Shift indices of neighboring mesh forwards (all indices + length of previous mesh - length of shared elements), neighboring mesh is now continuation block of old mesh with overlapping elements removed
+                        #Also shift the corresponding gluing indices
+                        #For each gluing vertex in current submesh:
+                            #Remove it from mesh list
+                            #Shift remaining nodes back by 1 (everywhere applicable, including iterable list)
+                            #On nodes (elements) list, replace removed node by corresponding gluing vertex in the neighbor's mesh
+                        #For each pair of gluing triangles:
+                            #Replace previously ghost neighbor by glued neighbor
+                        #Perform stack of arrays
+                    pass
+
+        return nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices
+
+    return assembly
