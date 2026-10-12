@@ -8,6 +8,7 @@
 - **Topography/Bathymetry**: Supports complex bathymetry generation including islands, slopes, and custom functions.
 - **Initial Conditions**: Define initial water levels, discharges, and velocities.
 - **Custom Case Support**: Allows for user-defined tests following a straightforward template.
+- **Submesh Gluing**: Supports mesh creation by joining boundaries of rectangular sub-meshes.
 - **Pipeline Integration**: Automatically generates the files required by SWEpy.
 
 ## Installation
