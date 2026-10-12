@@ -6,7 +6,7 @@ from main import execute
 options={
     # "nxny": Grid dimensions [nx, ny] - Number of elements/nodes in X and Y directions
     # "dxdy": Grid spacing [dx, dy] - Alternative to nxny. If provided, it takes precedence in some grids.
-    "nxny": [100, 50],
+    "nxny": [100, 10],
     # "dxdy": [1.0, 1.0],
 
     # "folder": Name of the output directory where files will be saved
