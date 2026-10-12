@@ -483,12 +483,12 @@ def geo_join(meshtype):
                             removed+=1
                             removed_local_idxs.append(idx)
                             removed_global_idxs.append(ghost[0])
-                            removed_vertices_idxs.append(len(basemesh[4])-len(basemesh[3])+1+idx)
+                            removed_vertices_idxs.append(len(basemesh[4])-len(basemesh[3])+idx)
                             basemesh[1][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=-2
                             continue
 
                         basemesh[1][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=ghost[0]-removed
-                        basemesh[0][ghost[0]][np.where(basemesh[0][ghost[0]]==len(basemesh[4])-len(basemesh[3])+1+idx)]=len(basemesh[4])-len(basemesh[3])+1+idx-removed
+                        basemesh[0][ghost[0]][np.where(basemesh[0][ghost[0]]==len(basemesh[4])-len(basemesh[3])+idx)]=len(basemesh[4])-len(basemesh[3])+idx-removed
                         ghost[0]-=removed
                     
                     basemesh[0]=np.delete(basemesh[0],removed_global_idxs,0)
@@ -508,12 +508,12 @@ def geo_join(meshtype):
                             removed+=1
                             removed_local_idxs.append(idx)
                             removed_global_idxs.append(ghost[0])
-                            removed_vertices_idxs.append(len(neighmesh[4])-len(neighmesh[3])+1+idx)
+                            removed_vertices_idxs.append(len(neighmesh[4])-len(neighmesh[3])+idx)
                             neighmesh[1][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=-2
                             continue
 
                         neighmesh[1][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=ghost[0]-removed
-                        neighmesh[0][ghost[0]][np.where(neighmesh[0][ghost[0]]==len(neighmesh[4])-len(neighmesh[3])+1+idx)]=len(neighmesh[4])-len(neighmesh[3])+1+idx-removed
+                        neighmesh[0][ghost[0]][np.where(neighmesh[0][ghost[0]]==len(neighmesh[4])-len(neighmesh[3])+idx)]=len(neighmesh[4])-len(neighmesh[3])+idx-removed
                         ghost[0]-=removed
                     
                     neighmesh[0]=np.delete(neighmesh[0],removed_global_idxs,0)
