@@ -3,6 +3,33 @@ import grids
 import numpy as op
 import scipy as sp
 
+
+###################################################
+#########            TEST CASES           #########
+###################################################
+#
+# User- and pre-defined test cases for SWEpy
+#
+# Triangles allows for the construction of rectangular meshes subdivided either by right or equilateral triangles, and meshes resulting from the joining at the boundary of those.
+#
+# A test case function must always take in the argument "options" and must always return the 6 arguments "x,y,B,HUHV,W,mesh" formatted as follows:
+#
+# -"x,y" are the x- and y-coordinates for each vertex on the mesh.
+# -"B,HUHV,W" are the initial bottom height, discharges, and water level values at each vertex on the mesh. If the mesh has submeshes, they are lambda functions that take in 
+#  mesh-like arguments "x,y" and return an array of the corresponding value at each vertex.
+# -"mesh" is an (N,2)-array containing the vertices of the mesh. If the mesh has submeshes, it is a dictionary containing the following fields:
+#  
+#        -"global_mesh": a single xy mesh (array of [x,y] coordinates of vertices) of the whole domain that contains all submeshes (deprecated?).
+#        -"submeshes": an ordered list of xy submeshes (arrays of [ẍ,y] coordinates of vertices).
+#        -"glue_idx": a list following the ordering of "submeshes" where each element corresponds to a submesh and is to be constructed in the following way: 
+#            for each border (left, right, top, bottom): if border is free, append -1, otherwise, append the list of the indices of the vertices in that border that are to be glued with the neighbor in this direction.
+#        -"gluing": a list following the ordering of "submeshes" where each element corresponds to a submesh and is to be constructed in the following way:
+#            for each border: if border is free, append -1, otherwise, append the index of the border of the submesh that is to be glued to this submesh.
+#         E.g., if we have only two submeshes, and submesh 0 is to be glued by its right side to the left side of submesh 1, then mesh["gluing"]=[[-1, 1,-1,-1],[0,-1,-1,-1]].
+#
+# As long as these conventions are followed, Triangles will successfully produce a mesh that's ready to be loaded and ran with SWEpy.
+
+
 rng = np.random.default_rng()
 
 sech = lambda x: np.divide(2.0*np.exp(-1.0*x),1.0 + np.exp(-2.0*x))
