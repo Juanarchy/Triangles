@@ -491,15 +491,16 @@ def geo_join(meshtype):
                         basemesh[0][ghost[0]][np.where(basemesh[0][ghost[0]]==len(basemesh[4])-len(basemesh[3])+1+idx)]=len(basemesh[4])-len(basemesh[3])+1+idx-removed
                         ghost[0]-=removed
                     
-                    basemesh[0]=np.delete(mesh[0],removed_global_idxs,0)
-                    basemesh[1]=np.delete(mesh[1],removed_global_idxs,0)
-                    basemesh[2]=np.delete(mesh[2],removed_global_idxs,0)
-                    basemesh[3]=np.delete(mesh[3],removed_local_idxs,0)
-                    basemesh[4]=np.delete(mesh[4],removed_vertices_idxs,0)
+                    basemesh[0]=np.delete(basemesh[0],removed_global_idxs,0)
+                    basemesh[1]=np.delete(basemesh[1],removed_global_idxs,0)
+                    basemesh[2]=np.delete(basemesh[2],removed_global_idxs,0)
+                    basemesh[3]=np.delete(basemesh[3],removed_local_idxs,0)
+                    basemesh[4]=np.delete(basemesh[4],removed_vertices_idxs,0)
                     
                     removed=0
                     removed_local_idxs=[]
                     removed_global_idxs=[]
+                    removed_vertices_idxs=[]
                     idx=-1
                     for ghost in neighmesh[3]:
                         idx+=1
