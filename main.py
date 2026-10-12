@@ -63,20 +63,24 @@ def execute(options):
     else:
         from triangles import eqtriangles as assembly
 
-    if oldmesh is dict:
+    if type(oldmesh) is dict:
         meshtype = assembly
-        from triangles import geo_join
-        assembly=geo_join(meshtype)
+        assembly=tri.geo_join(meshtype)
 
-    nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices = assembly(oldmesh,options["bconds"])
+    nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices = assembly(oldmesh,options["bconds"])
 
-    newB=np.mean(B[nodes[ghosts[:,1]]],axis=1)
-    newW=np.mean(W[nodes[ghosts[:,1]]],axis=1)
-    newHUHV=np.mean(HUHV[nodes[ghosts[:,1]]],axis=1)
+    if type(oldmesh) is not dict:
+        newB=np.mean(B[nodes[ghosts[:,1]]],axis=1)
+        newW=np.mean(W[nodes[ghosts[:,1]]],axis=1)
+        newHUHV=np.mean(HUHV[nodes[ghosts[:,1]]],axis=1)
 
-    B=np.hstack((B,newB))
-    W=np.hstack((W,newW))
-    HUHV=np.vstack((HUHV,newHUHV))
+        B=np.hstack((B,newB))
+        W=np.hstack((W,newW))
+        HUHV=np.vstack((HUHV,newHUHV))
+    else:
+        B = B(newmesh[:,0],newmesh[:,1])
+        W = W(newmesh[:,0],newmesh[:,1])
+        HUHV = HUHV(newmesh[:,0],newmesh[:,1])
 
     fs.save_all(folder_path,B,options,HUHV,neighs,neighsides,nodes,ghosts,newmesh,W)
 
@@ -103,7 +107,7 @@ def execute(options):
 
             x,y,B,HUHV,W,oldmesh=mybench(options)
 
-            nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices = assembly(oldmesh,options["bconds"])
+            nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices = assembly(oldmesh,options["bconds"])
 
             newB=np.mean(B[nodes[ghosts[:,1]]],axis=1)
             newW=np.mean(W[nodes[ghosts[:,1]]],axis=1)

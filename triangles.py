@@ -96,7 +96,7 @@ def bcond_develop(left_indices,right_indices,top_indices,bottom_indices,mesh,nod
         ghosts_top_sides=np.tile(np.array([1,-1,-1],dtype=int),(nghosts_top,1))
         if not rect:
             top_indices_evens=top_indices[np.array(range(0,len(top_indices),2))]
-            ghosts_top_nodes[np.array(range(0,len(top_indices),2))]=np.array([nodes[top_indices_evens][:,2],nodes[top_indices_evens][:,0],np.array(range(oldncoords,newncoords))[top_indices_evens]],dtype=int).T
+            ghosts_top_nodes[np.array(range(0,len(top_indices),2))]=np.array([nodes[top_indices_evens][:,2],nodes[top_indices_evens][:,0],np.array(range(oldncoords,newncoords,2))],dtype=int).T
             ghosts_top_sides[np.array(range(0,len(top_indices),2))]=np.tile(np.array([2,-1,-1],dtype=int),(len(ghosts_top_sides[np.array(range(0,len(top_indices),2))]),1))
 
         top_neighsides=np.repeat(np.array([0],dtype=int),nghosts_top)
@@ -166,7 +166,7 @@ def rectriangles(mesh,bconds):
         bconds (list): List of boundary condition strings [left, right, top, bottom].
         
     Returns:
-        tuple: (nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices)
+        tuple: (nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices)
     """
 
     xmax=np.max(mesh[:,0])
@@ -239,7 +239,7 @@ def rectriangles(mesh,bconds):
 
     newmesh=np.vstack((mesh,newnodes))
 
-    return nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices
+    return nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices
 
 def eqtriangles(mesh,bconds):
     """
@@ -250,7 +250,7 @@ def eqtriangles(mesh,bconds):
         bconds (list): List of boundary condition strings [left, right, top, bottom].
         
     Returns:
-        tuple: (nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices)
+        tuple: (nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices)
     """
 
     ind = np.lexsort(np.array([mesh[:,1],mesh[:,0]]))
@@ -370,14 +370,20 @@ def eqtriangles(mesh,bconds):
 
     newmesh=np.vstack((mesh,newnodes))
 
-    return nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices
+    return nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices
 
 def geo_join(meshtype):
 
     def assembly(oldmesh,bconds):
         meshes=[]
         for submesh in oldmesh["submeshes"]:
-             meshes.append(meshtype(submesh,bconds))
+            get=[]
+            result = (meshtype(submesh,bconds))
+            for thing in result:
+                get.append(thing)
+            meshes.append(get)
+
+        basemesh=meshes[0]
 
         meshn=-1
         for mesh in meshes:
@@ -387,7 +393,7 @@ def geo_join(meshtype):
                 if neigh != -1:
                     #For each involved mesh:
                         #Find cells that should be glued:
-                            #For each pair of gluing vertices:
+                            #For each consecutive pair of gluing vertices:
                                 #Find cell in edge that matches them
                                 #Add to list
                         #Remove ghost cells where gluing
@@ -404,8 +410,162 @@ def geo_join(meshtype):
                         #For each pair of gluing triangles:
                             #Replace previously ghost neighbor by glued neighbor
                         #Perform stack of arrays
-                    pass
 
-        return nodes, neighs, neighsides, ghosts, newmesh, ni, bottom_indices, top_indices
+                    neighmesh = meshes[neigh]
+                    neighside = s+(-1)**(s%2)
+                    glue_idxc = oldmesh["glue_idx"][meshn][s]
+                    glue_idxn = oldmesh["glue_idx"][neigh][neighside]
+                    
+                    if len(mesh[6:10][s])>len(neighmesh[6:10][neighside]): #Current side is longer
+                        v1_l=glue_idxc[0]
+                        v2_l=glue_idxc[s][1]
+
+                        sidecell_idx_inlist=-1
+                        for sidecell_idx in mesh[6:10][s]:
+                            sidecell_idx_inlist+=1
+
+                            side0c_matches=(basemesh[0][sidecell_idx][[0,1]]==np.array((v1_l,v2_l))).all() | (basemesh[0][sidecell_idx][[1,0]]==np.array((v1_l,v2_l))).all()
+                            side1c_matches=(basemesh[0][sidecell_idx][[1,2]]==np.array((v1_l,v2_l))).all() | (basemesh[0][sidecell_idx][[2,1]]==np.array((v1_l,v2_l))).all()
+                            side2c_matches=(basemesh[0][sidecell_idx][[2,0]]==np.array((v1_l,v2_l))).all() | (basemesh[0][sidecell_idx][[0,2]]==np.array((v1_l,v2_l))).all()
+
+                            if (side0c_matches or side1c_matches or side2c_matches):
+                                break
+                            else:
+                                continue
+
+                        gluing_cells_idxs_c = mesh[6:10][s][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxc)-1]
+                        gluing_cells_idxs_n = neighmesh[6:10][neighside]
+
+                        gluing_cells_neighsides_c = np.array((0,1,2))[[side0c_matches,side1c_matches,side2c_matches]]
+
+                        side0n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(0,1)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(1,0)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
+                        side1n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(1,2)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(2,1)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
+                        side2n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(2,0)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(0,2)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
+
+                        gluing_cells_neighsides_n = np.array((0,1,2))[[side0n_matches,side1n_matches,side2n_matches]]
+
+                    else:   #Neighbor side is longer
+                        v1_l=glue_idxn[0]
+                        v2_l=glue_idxn[1]
+
+                        sidecell_idx_inlist=-1
+                        for sidecell_idx in neighmesh[6:10][neighside]:
+                            sidecell_idx_inlist+=1
+
+                            side0c_matches=(neighmesh[0][sidecell_idx][[0,1]]==np.array((v1_l,v2_l))).all() | (neighmesh[0][sidecell_idx][[1,0]]==np.array((v1_l,v2_l))).all()
+                            side1c_matches=(neighmesh[0][sidecell_idx][[1,2]]==np.array((v1_l,v2_l))).all() | (neighmesh[0][sidecell_idx][[2,1]]==np.array((v1_l,v2_l))).all()
+                            side2c_matches=(neighmesh[0][sidecell_idx][[2,0]]==np.array((v1_l,v2_l))).all() | (neighmesh[0][sidecell_idx][[0,2]]==np.array((v1_l,v2_l))).all()
+
+                            if (side0c_matches or side1c_matches or side2c_matches):
+                                break
+                            else:
+                                continue
+                        
+                        gluing_cells_idxs_n = neighmesh[6:10][neighside][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxn)-1]
+                        gluing_cells_idxs_c = mesh[6:10][s]
+
+                        gluing_cells_neighsides_n = np.array((0,1,2))[[side0c_matches,side1c_matches,side2c_matches]]
+
+                        side0n_matches = (basemesh[0][mesh[6:10][s][0]][[0,1]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][mesh[6:10][s][0]][[1,0]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
+                        side1n_matches = (basemesh[0][mesh[6:10][s][0]][[1,2]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][mesh[6:10][s][0]][[2,1]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
+                        side2n_matches = (basemesh[0][mesh[6:10][s][0]][[2,0]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][mesh[6:10][s][0]][[0,2]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
+
+                        gluing_cells_neighsides_c = np.array((0,1,2))[[side0n_matches,side1n_matches,side2n_matches]]
+
+                    removed=0
+                    removed_local_idxs=[]
+                    removed_global_idxs=[]
+                    removed_vertices_idxs=[]
+                    idx=-1
+                    for ghost in mesh[3]:
+                        idx+=1
+                        if ghost[1] in gluing_cells_idxs_c:
+                            removed+=1
+                            removed_local_idxs.append(idx)
+                            removed_global_idxs.append(ghost[0])
+                            removed_vertices_idxs.append(len(basemesh[4])-len(basemesh[3])+1+idx)
+                            basemesh[1][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=-2
+                            continue
+
+                        basemesh[1][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=ghost[0]-removed
+                        basemesh[0][ghost[0]][np.where(basemesh[0][ghost[0]]==len(basemesh[4])-len(basemesh[3])+1+idx)]=len(basemesh[4])-len(basemesh[3])+1+idx-removed
+                        ghost[0]-=removed
+                    
+                    basemesh[0]=np.delete(mesh[0],removed_global_idxs,0)
+                    basemesh[1]=np.delete(mesh[1],removed_global_idxs,0)
+                    basemesh[2]=np.delete(mesh[2],removed_global_idxs,0)
+                    basemesh[3]=np.delete(mesh[3],removed_local_idxs,0)
+                    basemesh[4]=np.delete(mesh[4],removed_vertices_idxs,0)
+                    
+                    removed=0
+                    removed_local_idxs=[]
+                    removed_global_idxs=[]
+                    idx=-1
+                    for ghost in neighmesh[3]:
+                        idx+=1
+                        if ghost[1] in gluing_cells_idxs_n:
+                            removed+=1
+                            removed_local_idxs.append(idx)
+                            removed_global_idxs.append(ghost[0])
+                            removed_vertices_idxs.append(len(neighmesh[4])-len(neighmesh[3])+1+idx)
+                            neighmesh[1][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=-2
+                            continue
+
+                        neighmesh[1][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=ghost[0]-removed
+                        neighmesh[0][ghost[0]][np.where(neighmesh[0][ghost[0]]==len(neighmesh[4])-len(neighmesh[3])+1+idx)]=len(neighmesh[4])-len(neighmesh[3])+1+idx-removed
+                        ghost[0]-=removed
+                    
+                    neighmesh[0]=np.delete(neighmesh[0],removed_global_idxs,0)
+                    neighmesh[1]=np.delete(neighmesh[1],removed_global_idxs,0)
+                    neighmesh[2]=np.delete(neighmesh[2],removed_global_idxs,0)
+                    neighmesh[3]=np.delete(neighmesh[3],removed_local_idxs,0)
+                    neighmesh[4]=np.delete(neighmesh[4],removed_vertices_idxs,0)
+
+                    elems_shift=len(basemesh[0])
+                    vertices_shift=len(basemesh[4])-len(glue_idxc)
+
+                    neighmesh[0]=neighmesh[0]+vertices_shift
+                    neighmesh[1]=neighmesh[1]+elems_shift
+                    neighmesh[3][0:2]=neighmesh[3][0:2]+elems_shift
+                    glue_idxn=glue_idxn+vertices_shift
+                    gluing_cells_idxs_n=gluing_cells_idxs_n+elems_shift
+                    neighmesh[6]=neighmesh[6]+elems_shift
+                    neighmesh[7]=neighmesh[7]+elems_shift
+                    neighmesh[8]=neighmesh[8]+elems_shift
+                    neighmesh[9]=neighmesh[9]+elems_shift
+
+                    glue_idxc=np.array(glue_idxc)
+
+                    pos=-1
+                    for vertex in glue_idxc:
+                        pos+=1
+                        basemesh[4]=np.delete(basemesh[4],vertex,0)
+                        basemesh[0][np.where(basemesh[0]>vertex)]-=1
+                        glue_idxc[np.where(glue_idxc>vertex)]-=1
+                        basemesh[0][np.where(basemesh[0]==vertex)]=glue_idxn[pos]
+                    
+                    pos=-1
+                    for element in gluing_cells_idxs_c:
+                        pos+=1
+                        basemesh[1][element][np.where(basemesh[1][element]==-2)]=gluing_cells_idxs_n[pos]
+                        neighmesh[1][gluing_cells_idxs_n[pos]][np.where(neighmesh[1][gluing_cells_idxs_n[pos]]==-2)]=element
+                    
+                    basemesh[0]=np.vstack((basemesh[0],neighmesh[0]))
+                    basemesh[1]=np.vstack((basemesh[1],neighmesh[1]))
+                    basemesh[2]=np.vstack((basemesh[2],neighmesh[2]))
+                    basemesh[3]=np.vstack((basemesh[3],neighmesh[3]))
+                    basemesh[4]=np.vstack((basemesh[4],neighmesh[4]))
+                    basemesh[5]=basemesh[5]+neighmesh[5]
+                    basemesh[6:10][s]=neighmesh[6:10][s]
+
+                    oldmesh["gluing"][meshn][s] = -1
+                    oldmesh["gluing"][neigh][neighside] = -1
+
+                    oldmesh["glue_idx"][meshn][s]=-1
+                    oldmesh["glue_idx"][neigh][neighside] = -1
+
+        nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices = basemesh
+
+        return nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices
 
     return assembly

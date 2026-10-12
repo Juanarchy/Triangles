@@ -10,7 +10,7 @@ options={
     # "dxdy": [1.0, 1.0],
 
     # "folder": Name of the output directory where files will be saved
-    "folder": "folder_name",
+    "folder": "test_thin2widechannel",
 
     # "abspath": Path to the location in which directory will be created
     "abspath": ".",

@@ -456,8 +456,8 @@ def dambreak_channel2shoebox(options):
 
     meshs = np.array([xs,ys]).T
 
-    glue_idxc = np.where(meshc[:,0]==xcmax)
-    glue_idxs = np.where((meshs[:,0]==xcmax)&(meshs[:,1]>=ycmin)&(meshs[:,1]<=ycmax))
+    glue_idxc = np.where(meshc[:,0]==xcmax)[0]
+    glue_idxs = np.where((meshs[:,0]==xcmax)&(meshs[:,1]>=ycmin)&(meshs[:,1]<=ycmax))[0]
 
     if len(glue_idxc)!=len(glue_idxs):
         print("[ERROR] Gluing indices don't match!")
@@ -471,16 +471,16 @@ def dambreak_channel2shoebox(options):
     x = meshg[:,0]
     y = meshg[:,1]
 
-    B = np.zeros_like(x)
+    B = lambda x_,y_: np.zeros_like(x_)
 
-    W = np.where(x<(xcmin+xcmax)/2, h,0)
+    W = lambda x_,y_: np.where(x_<(xcmin+xcmax)/2, h,0)
 
-    HU = np.zeros_like(x)
-    HV = HU
+    HU = lambda x_,y_: np.zeros_like(x_)
+    HV = lambda x_,y_: HU(x_,y_)
 
-    HUHV=np.array([HU,HV]).T
+    HUHV= lambda x_,y_: np.array([HU(x_,y_),HV(x_,y_)]).T
 
-    mesh = {"global_mesh":meshg,"submeshes":(meshc,meshs),"glue_idx":((-1,(glue_idxc),-1,-1),((glue_idxs),-1,-1,-1)),"gluing":((-1,1,-1,-1),(0,-1,-1,-1))}
+    mesh = {"global_mesh":meshg,"submeshes":[meshc,meshs],"glue_idx":[[-1,glue_idxc,-1,-1],[glue_idxs,-1,-1,-1]],"gluing":[[-1,1,-1,-1],[0,-1,-1,-1]]}
 
     return x,y,B,HUHV,W,mesh
 
