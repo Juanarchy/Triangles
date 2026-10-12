@@ -541,7 +541,7 @@ def geo_join(meshtype):
                         pos+=1
                         basemesh[4]=np.delete(basemesh[4],vertex,0)
                         basemesh[0][np.where(basemesh[0]==vertex)]=glue_idxn[pos]
-                        basemesh[0][np.where(basemesh[0]>vertex)]-=1
+                        basemesh[0][np.where((basemesh[0]>vertex)&(basemesh[0]!=glue_idxn[pos]))]-=1
                         glue_idxc[np.where(glue_idxc>vertex)]-=1
                     
                     pos=-1
