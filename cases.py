@@ -458,7 +458,7 @@ def dambreak_channel2shoebox(options):
         print('Shoebox elongated ', eps, ' units to ensure matching triangles with channel.')
 
     #Initial conditions
-    h = 1
+    h = 5
 
     #Coordinate limits
     xcmin = 0
@@ -501,6 +501,83 @@ def dambreak_channel2shoebox(options):
     B = lambda x_,y_: np.zeros_like(x_)
 
     W = lambda x_,y_: np.where(x_<(xcmin+xcmax)/2, h,0)
+
+    HU = lambda x_,y_: np.zeros_like(x_)
+    HV = lambda x_,y_: HU(x_,y_)
+
+    HUHV= lambda x_,y_: np.array([HU(x_,y_),HV(x_,y_)]).T
+
+    mesh = {"global_mesh":meshg,"submeshes":[meshc,meshs],"glue_idx":[[-1,glue_idxc,-1,-1],[glue_idxs,-1,-1,-1]],"gluing":[[-1,1,-1,-1],[0,-1,-1,-1]]}
+
+    return x,y,B,HUHV,W,mesh
+
+def dambreak_2dtoro(options):
+
+    #Lab test from Fraccarollo & Toro (2010)
+
+    #Geometry parameters
+    #To enforece correct gluing of channel and shoebox, shoebox_width should be a k-multiple of channel_width such that ny*k is an integer of the same parity as ny.
+    #I.e., if the channel is Lc units wide and is segmented into ny parts vertically, the shoebox's width must be Ls = Lc+Lc*n/ny, with n even. 
+    channel_length = 1
+    channel_width = 2
+    shoebox_length = 3
+    shoebox_width = 2
+
+    #Check and correction
+    #We solve the problem "Find minimum eps>0 for which Ls+eps is a k-multiple of Lc such that ny*k is an integer of the same parity as ny".
+    #By looking at the form of Ls from last comment, we can build a strictly increasing sequence of candidate solutions eps(n)=Lc-Ls+Lc*2n/ny. 
+    #Then, solving eps(x0)==0 gives (possibly) non integer x0 such that eps(x)>0 iff x>=x0.
+    ny=options['nxny'][1]
+    n0=np.ceil((shoebox_width/channel_width-1)*ny/2) #Since eps(n) is strictly increasing,  .
+    eps = (1+2*n0/ny)*channel_width-shoebox_width
+    shoebox_width+=eps
+    if eps>0:
+        print('Shoebox elongated ', eps, ' units to ensure matching triangles with channel.')
+
+    #Initial conditions
+    h = 0.6
+
+    #Coordinate limits
+    xcmin = 0
+    xcmax = channel_length
+    ycmin = -channel_width/2.0
+    ycmax = channel_width/2.0
+
+    xc,yc = grids.triangular_grid(xcmin,xcmax,ycmin,ycmax,None,options['nxny'])
+
+    meshc = np.array([xc,yc]).T
+
+    xcmax=xc.max()
+
+    xsmin = xcmax
+    xsmax = xsmin + shoebox_length
+    ysmin = -shoebox_width/2.0
+    ysmax = shoebox_width/2.0
+
+    nys = shoebox_width/(channel_width/ny)
+
+    xs,ys=grids.triangular_grid(xsmin,xsmax,ysmin,ysmax,None,[10,nys])
+
+    meshs = np.array([xs,ys]).T
+
+    glue_idxc = np.where((meshc[:,0]==xcmax)&(meshc[:,1]>=-0.2)&(meshc[:,1]<=0.2))[0]
+    glue_idxs = np.where((meshs[:,0]==xcmax)&(meshs[:,1]>=-0.2)&(meshs[:,1]<=0.2))[0]
+
+    if len(glue_idxc)!=len(glue_idxs):
+        print("[ERROR] Gluing indices don't match!")
+
+    mesh = np.zeros((len(xc)+len(xs)-len(glue_idxc),2))
+
+    candidate = np.vstack((meshc[0:-len(glue_idxc)],meshs))
+
+    meshg = candidate
+
+    x = meshg[:,0]
+    y = meshg[:,1]
+
+    B = lambda x_,y_: np.zeros_like(x_)
+
+    W = lambda x_,y_: np.where(x_<=xcmax, h,0)
 
     HU = lambda x_,y_: np.zeros_like(x_)
     HV = lambda x_,y_: HU(x_,y_)

@@ -418,7 +418,7 @@ def geo_join(meshtype):
                     
                     if len(mesh[6:10][s])>len(neighmesh[6:10][neighside]): #Current side is longer
                         v1_l=glue_idxc[0]
-                        v2_l=glue_idxc[s][1]
+                        v2_l=glue_idxc[1]
 
                         sidecell_idx_inlist=-1
                         for sidecell_idx in mesh[6:10][s]:
@@ -436,13 +436,13 @@ def geo_join(meshtype):
                         gluing_cells_idxs_c = mesh[6:10][s][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxc)-1]
                         gluing_cells_idxs_n = neighmesh[6:10][neighside]
 
-                        gluing_cells_neighsides_c = np.array((0,1,2))[[side0c_matches,side1c_matches,side2c_matches]]
+                        gluing_cells_neighsides_n = np.array((0,1,2))[[side0c_matches,side1c_matches,side2c_matches]]
 
                         side0n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(0,1)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(1,0)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
                         side1n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(1,2)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(2,1)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
                         side2n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(2,0)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(0,2)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
 
-                        gluing_cells_neighsides_n = np.array((0,1,2))[[side0n_matches,side1n_matches,side2n_matches]]
+                        gluing_cells_neighsides_c = np.array((0,1,2))[[side0n_matches,side1n_matches,side2n_matches]]
 
                     else:   #Neighbor side is longer
                         v1_l=glue_idxn[0]
@@ -462,15 +462,25 @@ def geo_join(meshtype):
                                 continue
                         
                         gluing_cells_idxs_n = neighmesh[6:10][neighside][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxn)-1]
-                        gluing_cells_idxs_c = mesh[6:10][s]
 
-                        gluing_cells_neighsides_n = np.array((0,1,2))[[side0c_matches,side1c_matches,side2c_matches]]
+                        gluing_cells_neighsides_c = np.array((0,1,2))[[side0c_matches,side1c_matches,side2c_matches]]
 
-                        side0n_matches = (basemesh[0][mesh[6:10][s][0]][[0,1]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][mesh[6:10][s][0]][[1,0]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
-                        side1n_matches = (basemesh[0][mesh[6:10][s][0]][[1,2]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][mesh[6:10][s][0]][[2,1]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
-                        side2n_matches = (basemesh[0][mesh[6:10][s][0]][[2,0]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][mesh[6:10][s][0]][[0,2]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
+                        sidecell_idx_inlist=-1
+                        for sidecell_idx in mesh[6:10][s]:
+                            sidecell_idx_inlist+=1
 
-                        gluing_cells_neighsides_c = np.array((0,1,2))[[side0n_matches,side1n_matches,side2n_matches]]
+                            side0n_matches = (basemesh[0][sidecell_idx][[0,1]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][sidecell_idx][[1,0]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
+                            side1n_matches = (basemesh[0][sidecell_idx][[1,2]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][sidecell_idx][[2,1]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
+                            side2n_matches = (basemesh[0][sidecell_idx][[2,0]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][sidecell_idx][[0,2]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
+
+                            if (side0n_matches or side1n_matches or side2n_matches):
+                                break
+                            else:
+                                continue
+
+                        gluing_cells_idxs_c = mesh[6:10][s][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxc)-1]
+                        
+                        gluing_cells_neighsides_n = np.array((0,1,2))[[side0n_matches,side1n_matches,side2n_matches]]
 
                     removed=0
                     removed_local_idxs=[]
@@ -523,11 +533,11 @@ def geo_join(meshtype):
                     neighmesh[4]=np.delete(neighmesh[4],removed_vertices_idxs,0)
 
                     elems_shift=len(basemesh[0])
-                    vertices_shift=len(basemesh[4])
+                    vertices_shift=len(basemesh[4])-len(glue_idxc)
 
                     neighmesh[0]=neighmesh[0]+vertices_shift
                     neighmesh[1]=neighmesh[1]+elems_shift
-                    neighmesh[3][0:2]=neighmesh[3][0:2]+elems_shift
+                    neighmesh[3][:,0:2]=neighmesh[3][:,0:2]+elems_shift
                     glue_idxn=glue_idxn+vertices_shift
                     gluing_cells_idxs_n=gluing_cells_idxs_n+elems_shift
                     neighmesh[6]=neighmesh[6]+elems_shift
@@ -542,13 +552,15 @@ def geo_join(meshtype):
                         pos+=1
                         basemesh[4]=np.delete(basemesh[4],vertex,0)
                         basemesh[0][np.where(basemesh[0]==vertex)]=glue_idxn[pos]
-                        basemesh[0][np.where((basemesh[0]>vertex)&(basemesh[0]!=glue_idxn[pos]))]-=1
+                        basemesh[0][np.where((basemesh[0]>vertex)&(basemesh[0]<len(basemesh[4])+1))]-=1
                         glue_idxc[np.where(glue_idxc>vertex)]-=1
                     
                     pos=-1
                     for element in gluing_cells_idxs_c:
                         pos+=1
+                        basemesh[2][element][np.where(basemesh[1][element]==-2)]=gluing_cells_neighsides_c
                         basemesh[1][element][np.where(basemesh[1][element]==-2)]=gluing_cells_idxs_n[pos]
+                        neighmesh[2][gluing_cells_idxs_n[pos]][np.where(neighmesh[1][gluing_cells_idxs_n[pos]]==-2)]=gluing_cells_neighsides_n
                         neighmesh[1][gluing_cells_idxs_n[pos]][np.where(neighmesh[1][gluing_cells_idxs_n[pos]]==-2)]=element
                     
                     basemesh[0]=np.vstack((basemesh[0],neighmesh[0]))
