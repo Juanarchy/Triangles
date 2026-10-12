@@ -477,7 +477,7 @@ def geo_join(meshtype):
                     removed_global_idxs=[]
                     removed_vertices_idxs=[]
                     idx=-1
-                    for ghost in mesh[3]:
+                    for ghost in basemesh[3]:
                         idx+=1
                         if ghost[1] in gluing_cells_idxs_c:
                             removed+=1
@@ -523,7 +523,7 @@ def geo_join(meshtype):
                     neighmesh[4]=np.delete(neighmesh[4],removed_vertices_idxs,0)
 
                     elems_shift=len(basemesh[0])
-                    vertices_shift=len(basemesh[4])-len(glue_idxc)
+                    vertices_shift=len(basemesh[4])
 
                     neighmesh[0]=neighmesh[0]+vertices_shift
                     neighmesh[1]=neighmesh[1]+elems_shift
