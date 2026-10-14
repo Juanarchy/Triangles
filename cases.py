@@ -535,7 +535,7 @@ def dambreak_2dtoro(options):
         print('Shoebox elongated ', eps, ' units to ensure matching triangles with channel.')
 
     #Initial conditions
-    h = 0.6
+    h = 2.4
 
     #Coordinate limits
     xcmin = 0

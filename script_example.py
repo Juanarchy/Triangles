@@ -16,7 +16,7 @@ options={
     "abspath": ".",
 
     # "Tmax": Maximum simulation time (in seconds)
-    "Tmax": 5,
+    "Tmax": 20,
 
     # "tol_dry": Tolerance for dry cells (water depth threshold)
     "tol_dry": 0.000001,

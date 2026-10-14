@@ -373,8 +373,31 @@ def eqtriangles(mesh,bconds):
     return nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices
 
 def geo_join(meshtype):
+#Algorithm outline:
+    #For each involved mesh:
+        #Find cells that should be glued:
+            #For each consecutive pair of gluing vertices:
+                #Find cell in edge that matches them
+                #Add to list
+        #Remove ghost cells where gluing
+        #Shift remainder ghost cells backwards (everywhere applicable)
+        #Remove ghost vertices
+        #Shift remainder ghost vertices backwards
+    #Stack neighboring mesh to global mesh:
+        #Shift indices of neighboring mesh forwards (all indices + length of previous mesh - length of shared elements), neighboring mesh is now continuation block of old mesh with overlapping elements removed
+        #Also shift the corresponding gluing indices
+        #For each gluing vertex in current submesh:
+            #Remove it from mesh list
+            #Shift remaining nodes back by 1 (everywhere applicable, including iterable list)
+            #On nodes (elements) list, replace removed node by corresponding gluing vertex in the neighbor's mesh
+        #For each pair of gluing triangles:
+            #Replace previously ghost neighbor by glued neighbor
+        #Cut ghosts off base mesh and shift them to the end (everywwhere applicable)
+        # (this ensures correct functioning of SWEpý who assumes all ghosts are at the end of the mesh and have index higher than Ghosts[0,0])
+        #Perform stack of arrays
 
     def assembly(oldmesh,bconds):
+        #Generate full submeshes
         meshes=[]
         for submesh in oldmesh["submeshes"]:
             get=[]
@@ -383,130 +406,154 @@ def geo_join(meshtype):
                 get.append(thing)
             meshes.append(get)
 
+        #Initialize basemesh to which submeshes will be sequentially joined
         basemesh=meshes[0]
 
         meshn=-1
+        #For each submesh
         for mesh in meshes:
             meshn+=1
+            #For each of its sides
             for s in (0,1,2,3):
                 neigh = oldmesh["gluing"][meshn][s]
+                #If there is a neighboring submesh
                 if neigh != -1:
-                    #For each involved mesh:
-                        #Find cells that should be glued:
-                            #For each consecutive pair of gluing vertices:
-                                #Find cell in edge that matches them
-                                #Add to list
-                        #Remove ghost cells where gluing
-                        #Shift remainder ghost cells backwards (everywhere applicable)
-                        #Remove ghost vertices
-                        #Shift remainder ghost vertices backwards
-                    #Stack neighboring mesh to global mesh:
-                        #Shift indices of neighboring mesh forwards (all indices + length of previous mesh - length of shared elements), neighboring mesh is now continuation block of old mesh with overlapping elements removed
-                        #Also shift the corresponding gluing indices
-                        #For each gluing vertex in current submesh:
-                            #Remove it from mesh list
-                            #Shift remaining nodes back by 1 (everywhere applicable, including iterable list)
-                            #On nodes (elements) list, replace removed node by corresponding gluing vertex in the neighbor's mesh
-                        #For each pair of gluing triangles:
-                            #Replace previously ghost neighbor by glued neighbor
-                        #Perform stack of arrays
-
+                    #Unpack neighboring mesh
                     neighmesh = meshes[neigh]
+                    #Deduce the neighbor's joining side (left joins with right, right joins with left, top joins with bottom, bottom joins with top) (0->1, 1->0, 2->3, 3->2)
                     neighside = s+(-1)**(s%2)
+                    #Unpack gluing indices
                     glue_idxc = oldmesh["glue_idx"][meshn][s]
                     glue_idxn = oldmesh["glue_idx"][neigh][neighside]
                     
-                    if len(mesh[6:10][s])>len(neighmesh[6:10][neighside]): #Current side is longer
+                    #If...
+                    if len(mesh[6:10][s])>len(neighmesh[6:10][neighside]): #current side is longer:
                         v1_l=glue_idxc[0]
                         v2_l=glue_idxc[1]
-
+                        
+                        #For each cell in the current side
                         sidecell_idx_inlist=-1
                         for sidecell_idx in mesh[6:10][s]:
                             sidecell_idx_inlist+=1
 
+                            #See which side of the element contains the first two gluing vertices
                             side0c_matches=(basemesh[0][sidecell_idx][[0,1]]==np.array((v1_l,v2_l))).all() | (basemesh[0][sidecell_idx][[1,0]]==np.array((v1_l,v2_l))).all()
                             side1c_matches=(basemesh[0][sidecell_idx][[1,2]]==np.array((v1_l,v2_l))).all() | (basemesh[0][sidecell_idx][[2,1]]==np.array((v1_l,v2_l))).all()
                             side2c_matches=(basemesh[0][sidecell_idx][[2,0]]==np.array((v1_l,v2_l))).all() | (basemesh[0][sidecell_idx][[0,2]]==np.array((v1_l,v2_l))).all()
 
-                            if (side0c_matches or side1c_matches or side2c_matches):
-                                break
-                            else:
-                                continue
-
-                        gluing_cells_idxs_c = mesh[6:10][s][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxc)-1]
-                        gluing_cells_idxs_n = neighmesh[6:10][neighside]
-
-                        gluing_cells_neighsides_n = np.array((0,1,2))[[side0c_matches,side1c_matches,side2c_matches]]
-
-                        side0n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(0,1)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(1,0)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
-                        side1n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(1,2)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(2,1)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
-                        side2n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(2,0)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(0,2)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
-
-                        gluing_cells_neighsides_c = np.array((0,1,2))[[side0n_matches,side1n_matches,side2n_matches]]
-
-                    else:   #Neighbor side is longer
-                        v1_l=glue_idxn[0]
-                        v2_l=glue_idxn[1]
-
-                        sidecell_idx_inlist=-1
-                        for sidecell_idx in neighmesh[6:10][neighside]:
-                            sidecell_idx_inlist+=1
-
-                            side0c_matches=(neighmesh[0][sidecell_idx][[0,1]]==np.array((v1_l,v2_l))).all() | (neighmesh[0][sidecell_idx][[1,0]]==np.array((v1_l,v2_l))).all()
-                            side1c_matches=(neighmesh[0][sidecell_idx][[1,2]]==np.array((v1_l,v2_l))).all() | (neighmesh[0][sidecell_idx][[2,1]]==np.array((v1_l,v2_l))).all()
-                            side2c_matches=(neighmesh[0][sidecell_idx][[2,0]]==np.array((v1_l,v2_l))).all() | (neighmesh[0][sidecell_idx][[0,2]]==np.array((v1_l,v2_l))).all()
-
+                            #If there's a match, this is the cell we're looking for, so we're done
                             if (side0c_matches or side1c_matches or side2c_matches):
                                 break
                             else:
                                 continue
                         
-                        gluing_cells_idxs_n = neighmesh[6:10][neighside][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxn)-1]
+                        #With the index of this cell, we know that the next len(glue_idxc)-1 cells are also to be glued
+                        gluing_cells_idxs_c = mesh[6:10][s][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxc)-1]
+                        #And since the neighboring submesh is shorter on this side, the whole side is to be glued
+                        gluing_cells_idxs_n = neighmesh[6:10][neighside]
 
+                        #The neighside of the neighboring cells is the side which we found matched (neighside[cell, i] = index of the side of the neighboring cell that is shared with this cell's i-th side)
+                        gluing_cells_neighsides_n = np.array((0,1,2))[[side0c_matches,side1c_matches,side2c_matches]]
+
+                        #Then we check which side of the neighboring mesh matches
+                        side0n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(0,1)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(1,0)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
+                        side1n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(1,2)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(2,1)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
+                        side2n_matches = (neighmesh[0][neighmesh[6:10][neighside][0]][(2,0)]==np.array((glue_idxn[0],glue_idxn[1]))).all() | (neighmesh[0][neighmesh[6:10][neighside][0]][(0,2)]==np.array((glue_idxn[0],glue_idxn[1]))).all()
+
+                        #To get the current mesh gluing cells' neighside
+                        gluing_cells_neighsides_c = np.array((0,1,2))[[side0n_matches,side1n_matches,side2n_matches]]
+
+                    else:   #... or neighbor side is longer (or have same length)
+                        v1_l=glue_idxn[0]
+                        v2_l=glue_idxn[1]
+
+                        #For each cell in the neighbor's side
+                        sidecell_idx_inlist=-1
+                        for sidecell_idx in neighmesh[6:10][neighside]:
+                            sidecell_idx_inlist+=1
+
+                            #See which side of the element contains the first two gluing vertices
+                            side0c_matches=(neighmesh[0][sidecell_idx][[0,1]]==np.array((v1_l,v2_l))).all() | (neighmesh[0][sidecell_idx][[1,0]]==np.array((v1_l,v2_l))).all()
+                            side1c_matches=(neighmesh[0][sidecell_idx][[1,2]]==np.array((v1_l,v2_l))).all() | (neighmesh[0][sidecell_idx][[2,1]]==np.array((v1_l,v2_l))).all()
+                            side2c_matches=(neighmesh[0][sidecell_idx][[2,0]]==np.array((v1_l,v2_l))).all() | (neighmesh[0][sidecell_idx][[0,2]]==np.array((v1_l,v2_l))).all()
+
+                            #If there's a match, this is the cell we're looking for, so we're done
+                            if (side0c_matches or side1c_matches or side2c_matches):
+                                break
+                            else:
+                                continue
+                        
+                        #With the index of this cell, we know that the next len(glue_idxn)-1 cells are also to be glued (note we're using the neighbor's information)
+                        gluing_cells_idxs_n = neighmesh[6:10][neighside][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxn)-1]
+                        #The neighside of the current mesh's cells is the side which we found matched
                         gluing_cells_neighsides_c = np.array((0,1,2))[[side0c_matches,side1c_matches,side2c_matches]]
 
+                        #For each cell in the current side
                         sidecell_idx_inlist=-1
                         for sidecell_idx in mesh[6:10][s]:
                             sidecell_idx_inlist+=1
 
+                            #See which side of the element contains the first two gluing vertices
                             side0n_matches = (basemesh[0][sidecell_idx][[0,1]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][sidecell_idx][[1,0]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
                             side1n_matches = (basemesh[0][sidecell_idx][[1,2]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][sidecell_idx][[2,1]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
                             side2n_matches = (basemesh[0][sidecell_idx][[2,0]]==np.array((glue_idxc[0],glue_idxc[1]))).all() | (basemesh[0][sidecell_idx][[0,2]]==np.array((glue_idxc[0],glue_idxc[1]))).all()
 
+                            #If there's a match, this is the cell we're looking for, so we're done
                             if (side0n_matches or side1n_matches or side2n_matches):
                                 break
                             else:
                                 continue
 
+                        #With the index of this cell, we know that the next len(glue_idxc)-1 cells are also to be glued
                         gluing_cells_idxs_c = mesh[6:10][s][sidecell_idx_inlist:sidecell_idx_inlist+len(glue_idxc)-1]
-                        
+                        #The neighside of the neighboring cells is the side which we found matched (this might have to be defined for each cell when gluing top/bottom sides since I think not all edge sides are equal)
                         gluing_cells_neighsides_n = np.array((0,1,2))[[side0n_matches,side1n_matches,side2n_matches]]
 
+                    #To remove the ghost cells in the gluing side of the current mesh
                     removed=0
                     removed_local_idxs=[]
                     removed_global_idxs=[]
                     removed_vertices_idxs=[]
                     idx=-1
+                    #We go through each ghost cell
                     for ghost in basemesh[3]:
                         idx+=1
+                        #if it neighbors one of the gluing cells
                         if ghost[1] in gluing_cells_idxs_c:
+                            #we increase the removed count
                             removed+=1
+                            #we save its index in the ghost list
                             removed_local_idxs.append(idx)
+                            #we save its cell number
                             removed_global_idxs.append(ghost[0])
+                            #we save the index of its vertex that's outside the domain (ghost vertex)
                             removed_vertices_idxs.append(len(basemesh[4])-len(basemesh[3])+idx)
+                            #we put a -2 in its position in its neighbor's neighsides
+                            basemesh[2][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=-2
+                            #and put a -2 where it used to be in the neighbors list
                             basemesh[1][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=-2
                             continue
-
+                        #if it doesn't neighbor one of the gluing cells
+                        #we subtract the number of removed ghosts from its index in the neighbors list,...
                         basemesh[1][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=ghost[0]-removed
+                        #from its ghost vertex index...
                         basemesh[0][ghost[0]][np.where(basemesh[0][ghost[0]]==len(basemesh[4])-len(basemesh[3])+idx)]=len(basemesh[4])-len(basemesh[3])+idx-removed
-                        ghost[0]-=removed
+                        #and from its vertex
+                        ghost[0]=ghost[0]-removed
                     
+                    #Having prepared the mesh to deal with their absence, we remove the unnecesary ghost cells from
+                    #the cell vertices list
                     basemesh[0]=np.delete(basemesh[0],removed_global_idxs,0)
+                    #the neighbors list
                     basemesh[1]=np.delete(basemesh[1],removed_global_idxs,0)
+                    #the neighsides list
                     basemesh[2]=np.delete(basemesh[2],removed_global_idxs,0)
+                    #the gost cells list
                     basemesh[3]=np.delete(basemesh[3],removed_local_idxs,0)
+                    #and the ghost vertex from the mesh vertices list
                     basemesh[4]=np.delete(basemesh[4],removed_vertices_idxs,0)
                     
+                    #Then we do the same for the neighboring mesh
                     removed=0
                     removed_local_idxs=[]
                     removed_global_idxs=[]
@@ -519,12 +566,13 @@ def geo_join(meshtype):
                             removed_local_idxs.append(idx)
                             removed_global_idxs.append(ghost[0])
                             removed_vertices_idxs.append(len(neighmesh[4])-len(neighmesh[3])+idx)
+                            neighmesh[2][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=-2
                             neighmesh[1][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=-2
                             continue
 
                         neighmesh[1][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=ghost[0]-removed
                         neighmesh[0][ghost[0]][np.where(neighmesh[0][ghost[0]]==len(neighmesh[4])-len(neighmesh[3])+idx)]=len(neighmesh[4])-len(neighmesh[3])+idx-removed
-                        ghost[0]-=removed
+                        ghost[0]=ghost[0]-removed
                     
                     neighmesh[0]=np.delete(neighmesh[0],removed_global_idxs,0)
                     neighmesh[1]=np.delete(neighmesh[1],removed_global_idxs,0)
@@ -532,9 +580,22 @@ def geo_join(meshtype):
                     neighmesh[3]=np.delete(neighmesh[3],removed_local_idxs,0)
                     neighmesh[4]=np.delete(neighmesh[4],removed_vertices_idxs,0)
 
-                    elems_shift=len(basemesh[0])
-                    vertices_shift=len(basemesh[4])-len(glue_idxc)
 
+                    #Now we prepare the meshes. The objective is for the neighboring mesh to be inserted into the base mesh between its domain and its ghost cells
+                    #|                    submesh_i                      |     +     |       submesh_k     |
+                    #|                 domain_i            |   ghosts_i  |           |                     |
+
+                    #                                             =                      
+                    #                   
+                    #|                 domain_i            |       submesh_k     |   ghosts_i  |
+                    #We calculate the index shift for the neighboring mesh's elements
+                    elems_shift=len(basemesh[0])-len(basemesh[3])
+                    #its vertices
+                    vertices_shift=len(basemesh[4])-len(glue_idxc)
+                    #and the base mesh's ghost cells
+                    ghost_shift=len(neighmesh[0])
+
+                    #We shift the neighboring mesh by those amounts (including the reference lists of gluing vertices and cells)
                     neighmesh[0]=neighmesh[0]+vertices_shift
                     neighmesh[1]=neighmesh[1]+elems_shift
                     neighmesh[3][:,0:2]=neighmesh[3][:,0:2]+elems_shift
@@ -547,36 +608,66 @@ def geo_join(meshtype):
 
                     glue_idxc=np.array(glue_idxc)
 
+                    #then, for each gluing vertex in the current mesh:
                     pos=-1
                     for vertex in glue_idxc:
                         pos+=1
+                        #we delete it from the base mesh
                         basemesh[4]=np.delete(basemesh[4],vertex,0)
+                        #we replace it in the cell vertices mesh by its counterpart in the (now shifted) neighboring mesh
                         basemesh[0][np.where(basemesh[0]==vertex)]=glue_idxn[pos]
+                        #and shift everything after it backwards by one (except the cells we've replaced)
                         basemesh[0][np.where((basemesh[0]>vertex)&(basemesh[0]<len(basemesh[4])+1))]-=1
+                        #including the reference list of gluing vertices
                         glue_idxc[np.where(glue_idxc>vertex)]-=1
                     
+                    #also, for each gluing cell in the current mesh
                     pos=-1
                     for element in gluing_cells_idxs_c:
                         pos+=1
+                        #we replace its previously ghost neighside by the one we calculated
                         basemesh[2][element][np.where(basemesh[1][element]==-2)]=gluing_cells_neighsides_c
+                        #and its peviously ghost neighbor by its neighbor mesh counterpart
                         basemesh[1][element][np.where(basemesh[1][element]==-2)]=gluing_cells_idxs_n[pos]
+                        #and viceversa
                         neighmesh[2][gluing_cells_idxs_n[pos]][np.where(neighmesh[1][gluing_cells_idxs_n[pos]]==-2)]=gluing_cells_neighsides_n
                         neighmesh[1][gluing_cells_idxs_n[pos]][np.where(neighmesh[1][gluing_cells_idxs_n[pos]]==-2)]=element
                     
-                    basemesh[0]=np.vstack((basemesh[0],neighmesh[0]))
-                    basemesh[1]=np.vstack((basemesh[1],neighmesh[1]))
-                    basemesh[2]=np.vstack((basemesh[2],neighmesh[2]))
-                    basemesh[3]=np.vstack((basemesh[3],neighmesh[3]))
-                    basemesh[4]=np.vstack((basemesh[4],neighmesh[4]))
-                    basemesh[5]=basemesh[5]+neighmesh[5]
-                    basemesh[6:10][s]=neighmesh[6:10][s]
+                    #Afterwards, we separate the ghost elements from the base mesh
+                    ghost_nodes = basemesh[0][basemesh[3][0,0]:]
+                    ghost_neighs = basemesh[1][basemesh[3][0,0]:]
+                    ghost_neighsides = basemesh[2][basemesh[3][0,0]:]
+                    ghost = basemesh[3]
 
+                    #We create a mask indicating the position of the ghost cells in the base mesh's neighbors list
+                    ghost_location_mask = np.hstack(((basemesh[1][ghost[:,1]][:,0]==ghost[:,0])[:,None],(basemesh[1][ghost[:,1]][:,1]==ghost[:,0])[:,None],(basemesh[1][ghost[:,1]][:,2]==ghost[:,0])[:,None]))
+                    #and we shift their position forwards
+                    fictional=basemesh[1][ghost[:,1]]+ghost_shift
+
+                    basemesh[1][ghost[:,1]] = np.where(ghost_location_mask,fictional, basemesh[1][ghost[:,1]])
+
+                    #Finally, we stack the meshes as base domain + neighbor mesh + base ghosts
+                    basemesh[0]=np.vstack((basemesh[0][:ghost[0,0]],neighmesh[0],ghost_nodes))
+                    basemesh[1]=np.vstack((basemesh[1][:ghost[0,0]],neighmesh[1],ghost_neighs))
+                    basemesh[2]=np.vstack((basemesh[2][:ghost[0,0]],neighmesh[2],ghost_neighsides))
+                    #(shift the ghosts self reference forward after using its original position as reference)
+                    basemesh[3][:,0]=basemesh[3][:,0]+ghost_shift
+                    basemesh[3]=np.vstack((neighmesh[3],basemesh[3]))
+                    basemesh[4]=np.vstack((basemesh[4],neighmesh[4]))
+                    #the number of elements is the sum of both
+                    basemesh[5]=basemesh[5]+neighmesh[5]
+                    #and the side s boundary of the base cell is now the new mesh's side s boundary (since the base mesh's form side s boundary is now glued to the submesh)
+                    basemesh[6:10][s]=neighmesh[6:10][s]
+                    #This last part I think needs some logic to properly define since it doesn't cover the case where there's more than one gluing per side (e.g. a central mesh is glued to the right with a submesh, but glued upwards with a submesh that's also glued upwards)
+
+                    #then, since this side is now covered both in the current and neghboring mesh, we replace their gluing information with -1 so we don't go over them in the future
                     oldmesh["gluing"][meshn][s] = -1
                     oldmesh["gluing"][neigh][neighside] = -1
 
                     oldmesh["glue_idx"][meshn][s]=-1
                     oldmesh["glue_idx"][neigh][neighside] = -1
 
+        #the final output is the base mesh we've built
         nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices = basemesh
 
         return nodes, neighs, neighsides, ghosts, newmesh, ni, left_indices, right_indices, top_indices, bottom_indices
