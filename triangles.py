@@ -529,15 +529,15 @@ def geo_join(meshtype):
                             #we save the index of its vertex that's outside the domain (ghost vertex)
                             removed_vertices_idxs.append(len(basemesh[4])-len(basemesh[3])+idx)
                             #we put a -2 in its position in its neighbor's neighsides
-                            basemesh[2][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=-2
+                            basemesh[2][np.where(basemesh[1]==ghost[0])]=-2
                             #and put a -2 where it used to be in the neighbors list
-                            basemesh[1][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=-2
+                            basemesh[1][np.where(basemesh[1]==ghost[0])]=-2
                             continue
                         #if it doesn't neighbor one of the gluing cells
                         #we subtract the number of removed ghosts from its index in the neighbors list,...
-                        basemesh[1][ghost[1]][np.where(basemesh[1][ghost[1]]==ghost[0])]=ghost[0]-removed
+                        basemesh[1][np.where(basemesh[1]==ghost[0])]=ghost[0]-removed
                         #from its ghost vertex index...
-                        basemesh[0][ghost[0]][np.where(basemesh[0][ghost[0]]==len(basemesh[4])-len(basemesh[3])+idx)]=len(basemesh[4])-len(basemesh[3])+idx-removed
+                        basemesh[0][np.where(basemesh[0]==len(basemesh[4])-len(basemesh[3])+idx)]=len(basemesh[4])-len(basemesh[3])+idx-removed
                         #and from its vertex
                         ghost[0]=ghost[0]-removed
                     
@@ -566,12 +566,12 @@ def geo_join(meshtype):
                             removed_local_idxs.append(idx)
                             removed_global_idxs.append(ghost[0])
                             removed_vertices_idxs.append(len(neighmesh[4])-len(neighmesh[3])+idx)
-                            neighmesh[2][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=-2
-                            neighmesh[1][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=-2
+                            neighmesh[2][np.where(neighmesh[1]==ghost[0])]=-2
+                            neighmesh[1][np.where(neighmesh[1]==ghost[0])]=-2
                             continue
 
-                        neighmesh[1][ghost[1]][np.where(neighmesh[1][ghost[1]]==ghost[0])]=ghost[0]-removed
-                        neighmesh[0][ghost[0]][np.where(neighmesh[0][ghost[0]]==len(neighmesh[4])-len(neighmesh[3])+idx)]=len(neighmesh[4])-len(neighmesh[3])+idx-removed
+                        neighmesh[1][np.where(neighmesh[1]==ghost[0])]=ghost[0]-removed
+                        neighmesh[0][np.where(neighmesh[0]==len(neighmesh[4])-len(neighmesh[3])+idx)]=len(neighmesh[4])-len(neighmesh[3])+idx-removed
                         ghost[0]=ghost[0]-removed
                     
                     neighmesh[0]=np.delete(neighmesh[0],removed_global_idxs,0)
@@ -595,13 +595,15 @@ def geo_join(meshtype):
                     #and the base mesh's ghost cells
                     ghost_shift=len(neighmesh[0])
 
-                    #We save where the neighbors list of the neighboring submesh had -1 (indicating inexistent neighbors)
+                    #We save where the neighbors list of the neighboring submesh had -1 and -2 (indicating inexistent neighbors and gluing positions)
                     minus_one_mask = np.where(neighmesh[1]==-1)
+                    minus_two_mask = np.where(neighmesh[1]==-2)
 
                     #We shift the neighboring mesh by those amounts (including the reference lists of gluing vertices and cells)
                     neighmesh[0]=neighmesh[0]+vertices_shift
                     neighmesh[1]=neighmesh[1]+elems_shift
-                    neighmesh[1][minus_one_mask]=-1 #We restore the -1s to avoid neighboring conflicts
+                    neighmesh[1][minus_one_mask]=-1 #We restore the -1s and -2s to avoid neighboring conflicts
+                    neighmesh[1][minus_two_mask]=-2
                     neighmesh[3][:,0:2]=neighmesh[3][:,0:2]+elems_shift
                     glue_idxn=glue_idxn+vertices_shift
                     gluing_cells_idxs_n=gluing_cells_idxs_n+elems_shift
