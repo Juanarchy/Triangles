@@ -82,6 +82,10 @@ def execute(options):
         W = W(newmesh[:,0],newmesh[:,1])
         HUHV = HUHV(newmesh[:,0],newmesh[:,1])
 
+        B[nodes[ghosts[:,0]][:,-1]]=np.mean(B[nodes[ghosts[:,1]]],axis=1)
+        W[nodes[ghosts[:,0]][:,-1]]=np.mean(W[nodes[ghosts[:,1]]],axis=1)
+        HUHV[nodes[ghosts[:,0]][:,-1]]=np.mean(HUHV[nodes[ghosts[:,1]]],axis=1)
+
     fs.save_all(folder_path,B,options,HUHV,neighs,neighsides,nodes,ghosts,newmesh,W)
 
     if options["divisions"]>0:

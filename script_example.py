@@ -6,11 +6,11 @@ from main import execute
 options={
     # "nxny": Grid dimensions [nx, ny] - Number of elements/nodes in X and Y directions
     # "dxdy": Grid spacing [dx, dy] - Alternative to nxny. If provided, it takes precedence in some grids.
-    "nxny": [100, 50],
+    "nxny": [100, 70],
     # "dxdy": [1.0, 1.0],
 
     # "folder": Name of the output directory where files will be saved
-    "folder": "test_2dtoro",
+    "folder": "test_2dtorowide",
 
     # "abspath": Path to the location in which directory will be created
     "abspath": ".",
@@ -31,7 +31,7 @@ options={
     "CFL": 0.25,
 
     # "dt_save": Time interval for saving simulation results to disk
-    "dt_save": 0.1,
+    "dt_save": 0.05,
 
     # "bconds": Boundary conditions for the 4 sides: [West, East, North, South]
     # Options: "soft" (open), "wall" (reflective), "periodic"

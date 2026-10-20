@@ -520,8 +520,8 @@ def dambreak_2dtoro(options):
     #I.e., if the channel is Lc units wide and is segmented into ny parts vertically, the shoebox's width must be Ls = Lc+Lc*n/ny, with n even. 
     channel_length = 1
     channel_width = 2
-    shoebox_length = 3
-    shoebox_width = 2
+    shoebox_length = 4
+    shoebox_width = 4
 
     #Check and correction
     #We solve the problem "Find minimum eps>0 for which Ls+eps is a k-multiple of Lc such that ny*k is an integer of the same parity as ny".
@@ -531,11 +531,11 @@ def dambreak_2dtoro(options):
     n0=np.ceil((shoebox_width/channel_width-1)*ny/2) #Since eps(n) is strictly increasing,  .
     eps = (1+2*n0/ny)*channel_width-shoebox_width
     shoebox_width+=eps
-    if eps>0:
+    if eps!=0:
         print('Shoebox elongated ', eps, ' units to ensure matching triangles with channel.')
 
     #Initial conditions
-    h = 2.4
+    h = 3.5
 
     #Coordinate limits
     xcmin = 0
@@ -554,9 +554,9 @@ def dambreak_2dtoro(options):
     ysmin = -shoebox_width/2.0
     ysmax = shoebox_width/2.0
 
-    nys = shoebox_width/(channel_width/ny)
+    nys = int(shoebox_width/(channel_width/ny))
 
-    xs,ys=grids.triangular_grid(xsmin,xsmax,ysmin,ysmax,None,[10,nys])
+    xs,ys=grids.triangular_grid(xsmin,xsmax,ysmin,ysmax,None,[100,nys])
 
     meshs = np.array([xs,ys]).T
 
@@ -577,7 +577,7 @@ def dambreak_2dtoro(options):
 
     B = lambda x_,y_: np.zeros_like(x_)
 
-    W = lambda x_,y_: np.where(x_<=xcmax, h,0)
+    W = lambda x_,y_: np.where((x_<=xcmax)&(y_<=ycmax)&(y_>=ycmin), h,0)
 
     HU = lambda x_,y_: np.zeros_like(x_)
     HV = lambda x_,y_: HU(x_,y_)

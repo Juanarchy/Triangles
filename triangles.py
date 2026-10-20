@@ -595,9 +595,13 @@ def geo_join(meshtype):
                     #and the base mesh's ghost cells
                     ghost_shift=len(neighmesh[0])
 
+                    #We save where the neighbors list of the neighboring submesh had -1 (indicating inexistent neighbors)
+                    minus_one_mask = np.where(neighmesh[1]==-1)
+
                     #We shift the neighboring mesh by those amounts (including the reference lists of gluing vertices and cells)
                     neighmesh[0]=neighmesh[0]+vertices_shift
                     neighmesh[1]=neighmesh[1]+elems_shift
+                    neighmesh[minus_one_mask]=-1 #We restore the -1s to avoid neighboring conflicts
                     neighmesh[3][:,0:2]=neighmesh[3][:,0:2]+elems_shift
                     glue_idxn=glue_idxn+vertices_shift
                     gluing_cells_idxs_n=gluing_cells_idxs_n+elems_shift
