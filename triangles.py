@@ -628,17 +628,23 @@ def geo_join(meshtype):
                         glue_idxc[np.where(glue_idxc>vertex)]-=1
                     
                     #also, for each gluing cell in the current mesh
-                    pos=-1
-                    for element in gluing_cells_idxs_c:
-                        pos+=1
-                        #we replace its previously ghost neighside by the one we calculated
-                        basemesh[2][element][np.where(basemesh[1][element]==-2)]=gluing_cells_neighsides_c
-                        #and its peviously ghost neighbor by its neighbor mesh counterpart
-                        basemesh[1][element][np.where(basemesh[1][element]==-2)]=gluing_cells_idxs_n[pos]
-                        #and viceversa
-                        neighmesh[2][gluing_cells_idxs_n[pos]][np.where(neighmesh[1][gluing_cells_idxs_n[pos]]==-2)]=gluing_cells_neighsides_n
-                        neighmesh[1][gluing_cells_idxs_n[pos]][np.where(neighmesh[1][gluing_cells_idxs_n[pos]]==-2)]=element
+                    #pos=-1
+                    #for element in gluing_cells_idxs_c:
+                    #    pos+=1
+                    #    #we replace its previously ghost neighside by the one we calculated
+                    #    basemesh[2][element][np.where(basemesh[1][element]==-2)]=gluing_cells_neighsides_c
+                    #    #and its peviously ghost neighbor by its neighbor mesh counterpart
+                    #    basemesh[1][element][np.where(basemesh[1][element]==-2)]=gluing_cells_idxs_n[pos]
+                    #    #and viceversa
+                    #    neighmesh[2][gluing_cells_idxs_n[pos]][np.where(neighmesh[1][gluing_cells_idxs_n[pos]]==-2)]=gluing_cells_neighsides_n
+                    #    neighmesh[1][gluing_cells_idxs_n[pos]][np.where(neighmesh[1][gluing_cells_idxs_n[pos]]==-2)]=element
                     
+                    basemesh[2][basemesh[2]==-2]=gluing_cells_neighsides_c
+                    neighmesh[2][neighmesh[2]==-2]=gluing_cells_neighsides_n
+
+                    basemesh[1][basemesh[1]==-2]=gluing_cells_idxs_n
+                    neighmesh[1][neighmesh[1]==-2]=gluing_cells_idxs_c
+
                     #Afterwards, we separate the ghost elements from the base mesh
                     ghost_nodes = basemesh[0][basemesh[3][0,0]:]
                     ghost_neighs = basemesh[1][basemesh[3][0,0]:]
