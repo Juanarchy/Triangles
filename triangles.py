@@ -601,7 +601,7 @@ def geo_join(meshtype):
                     #We shift the neighboring mesh by those amounts (including the reference lists of gluing vertices and cells)
                     neighmesh[0]=neighmesh[0]+vertices_shift
                     neighmesh[1]=neighmesh[1]+elems_shift
-                    neighmesh[minus_one_mask]=-1 #We restore the -1s to avoid neighboring conflicts
+                    neighmesh[1][minus_one_mask]=-1 #We restore the -1s to avoid neighboring conflicts
                     neighmesh[3][:,0:2]=neighmesh[3][:,0:2]+elems_shift
                     glue_idxn=glue_idxn+vertices_shift
                     gluing_cells_idxs_n=gluing_cells_idxs_n+elems_shift
